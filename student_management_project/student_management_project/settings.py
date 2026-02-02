@@ -67,13 +67,17 @@ TEMPLATES = [
 ]
 
 # --- DATABASE ---
+# --- DATABASE (PostgreSQL) ---
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'student_db'),
+        'USER': os.getenv('POSTGRES_USER', 'student_user'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'student_pass'),
+        'HOST': os.getenv('DB_HOST', 'db'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-
 # --- CORS & DRF CONFIG ---
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000", # React Dev Server

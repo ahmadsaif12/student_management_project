@@ -34,7 +34,7 @@ class StaffAttendanceStats(APIView):
 
 class StudentAttendanceStats(APIView):
     """
-    STUDENT DASHBOARD (Matches Screenshot 1 & 4):
+    STUDENT DASHBOARD 
     - Top Cards: Total, Present, Absent, Total Subjects.
     - Bar Chart: 'Attendance Statistics by Subjects'.
     """
