@@ -35,7 +35,6 @@ class AdminDashboardStats(APIView):
                 value=Count('subjects')
             ).values('course_name', 'value'))
 
-            # 3. BOTTOM ROW CHARTS (Added to match image)
             # Total Student in Each Course
             course_student_distribution = list(Courses.objects.annotate(
                 value=Count('students')
