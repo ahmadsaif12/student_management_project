@@ -5,7 +5,7 @@ from django.db.models import Count
 from app.accounts.models import Students
 from app.curriculum.models import Subjects
 from app.core.models import SessionYearModel
-from .models import Attendance, AttendanceReport
+from app.attendance.models import Attendance, AttendanceReport
 
 # --- STAFF DASHBOARD VIEWS ---
 
@@ -123,3 +123,29 @@ class StudentAttendanceStats(APIView):
             })
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class StaffCurriculumStats(APIView):
+    """Placeholder for Curriculum Statistics"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Add your logic for curriculum stats here
+        return Response({"message": "Curriculum stats logic goes here"})
+# Add these to the end of your existing views.py
+
+class StaffSubjectList(APIView):
+    """STAFF: Returns a list of subjects assigned to the logged-in staff"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        subjects = Subjects.objects.filter(staff_id=request.user)
+        data = [{"id": s.id, "subject_name": s.subject_name} for s in subjects]
+        return Response(data)
+
+class AllCurriculumData(APIView):
+    """General view for curriculum metadata"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Placeholder logic
+        return Response({"message": "Curriculum data list"})

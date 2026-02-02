@@ -24,4 +24,4 @@ class ContactCreateView(CreateAPIView):
     """Public API for anyone to send contact messages"""
     queryset = ContactMessage.objects.all()
     serializer_class = ContactSerializer
-    permission_classes = [permissions.AllowAny] # No login required to contact support
+    permission_classes = [permissions.AllowAny]

@@ -10,6 +10,15 @@ class CustomUser(AbstractUser):
     user_type_data = ((HOD, "HOD"), (STAFF, "Staff"), (STUDENT, "Student"))
     user_type = models.CharField(default=1, choices=user_type_data, max_length=10)
 
+    email = models.EmailField(unique=True) 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username'] 
+
+    EMAIL_TO_USER_TYPE_MAP = {
+        'hod': HOD,
+        'staff': STAFF,
+        'student': STUDENT
+    }
 class AdminHOD(BaseModel):
     id = models.AutoField(primary_key=True)
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
