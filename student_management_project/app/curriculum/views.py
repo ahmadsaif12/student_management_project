@@ -3,7 +3,7 @@ from .models import Courses, Subjects
 from app.core.models import SessionYearModel
 from .serializers import CourseSerializer, SubjectSerializer, SessionYearSerializer
 
-# --- COURSE VIEWS ---
+
 class CourseListCreateView(generics.ListCreateAPIView):
     """Admin Dashboard: Powers the 'Total Courses' card and Course List."""
     queryset = Courses.objects.all()
@@ -16,7 +16,7 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-# --- SUBJECT VIEWS ---
+
 class SubjectListCreateView(generics.ListCreateAPIView):
     """
     Admin Dashboard: Powers 'Total Subjects' card.

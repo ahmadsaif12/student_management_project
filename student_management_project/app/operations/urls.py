@@ -2,37 +2,30 @@ from django.urls import path
 from .views import (
     DashboardChartDataAPIView,
     StaffHomeStats,
+    StudentHomeStats,
     StaffLeaveAPIView,
     AdminLeaveActionAPIView,
     FeedbackAPIView,
-    AdminFeedbackView,
-    StudentResultAPIView
+    StudentResultAPIView,
+    ContactCreateView
 )
 
 urlpatterns = [
-    path('dashboard-charts/', DashboardChartDataAPIView.as_view(), name='api_dashboard_charts'),
-    
-    # STAFF: Powers the Yellow Card and Leave Status Chart
-    path('staff-home-stats/', StaffHomeStats.as_view(), name='api_staff_home_stats'),
-
+    # --- DASHBOARDS (Stats for Charts & Cards) ---
+    path('admin-dashboard-stats/', DashboardChartDataAPIView.as_view(), name='api_admin_dashboard'),
+    path('staff-dashboard-stats/', StaffHomeStats.as_view(), name='api_staff_dashboard'),
+    path('student-dashboard-stats/', StudentHomeStats.as_view(), name='api_student_dashboard'),
 
     # --- LEAVE MANAGEMENT ---
-    # STAFF: View own leaves or apply for a new one
+    # Staff apply/view history
     path('leave/staff/', StaffLeaveAPIView.as_view(), name='api_staff_leave'),
-    
-    # HOD: Approve or Reject staff/student leaves
+    # Admin approves or rejects
     path('leave/action/', AdminLeaveActionAPIView.as_view(), name='api_leave_action'),
-    
 
-    # --- FEEDBACK MANAGEMENT ---
-    # STAFF/STUDENT: Submit feedback
-    path('feedback/', FeedbackAPIView.as_view(), name='api_feedback'),
-    
-    # HOD: View all feedback and send replies
-    path('feedback/admin/', AdminFeedbackView.as_view(), name='api_admin_feedback'),
-    
+    # --- FEEDBACK & RESULTS ---
+    path('feedback/submit/', FeedbackAPIView.as_view(), name='api_feedback_submit'),
+    path('manage-results/', StudentResultAPIView.as_view(), name='api_manage_results'),
 
-    # --- RESULTS MANAGEMENT ---
-    # STUDENT: View own results
-    path('result/student/', StudentResultAPIView.as_view(), name='api_student_result'),
+    # --- PUBLIC SERVICES ---
+    path('contact/send/', ContactCreateView.as_view(), name='api_contact_send'),
 ]
