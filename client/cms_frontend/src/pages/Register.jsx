@@ -33,7 +33,7 @@ const Register = () => {
     setLoading(true);
 
     
-    // "alex.student@gmail.com.student@jecrc.ac.in"
+    // "alex.student@jecrc.ac.in"
     const cleanPrefix = formData.email_prefix.trim().split('@')[0].split('.')[0];
     const finalEmail = `${cleanPrefix}.${formData.role}@jecrc.ac.in`.toLowerCase();
 

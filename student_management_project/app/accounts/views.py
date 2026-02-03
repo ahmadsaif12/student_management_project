@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import generics
 
 from .models import CustomUser, Students, Staffs, AdminHOD
 from .serializers import UserSerializer, StudentSerializer, StaffSerializer, AdminHODSerializer
@@ -141,3 +142,14 @@ class ProfileAPIView(APIView):
                 return Response(StudentSerializer(profile).data)
         except Exception as e:
             return Response({"error": f"Profile not found: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class StaffListAPIView(generics.ListAPIView):
+    """
+    Returns a list of all users who are Staff (user_type='2')
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(user_type='2')

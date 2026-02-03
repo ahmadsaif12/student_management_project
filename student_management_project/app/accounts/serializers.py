@@ -24,11 +24,10 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StaffSerializer(serializers.ModelSerializer):
-    admin = UserSerializer(read_only=True)
     class Meta:
-        model = Staffs
-        fields = '__all__'
-
+        model = CustomUser 
+        fields = ['id', 'username', 'first_name', 'last_name', 'email'] 
+        # Ensure 'address' is NOT here because CustomUser doesn't have it.
 class AdminHODSerializer(serializers.ModelSerializer):
     admin = UserSerializer(read_only=True)
     class Meta:

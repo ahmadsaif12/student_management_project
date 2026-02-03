@@ -14,8 +14,15 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SubjectSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
-    staff = StaffSerializer(read_only=True)
+    
+    course_details = CourseSerializer(source='course_id', read_only=True)
+    staff_details = StaffSerializer(source='staff_id', read_only=True)
+
     class Meta:
         model = Subjects
-        fields = '__all__'
+        # Use the exact field names from models.py: course_id and staff_id
+        fields = [
+            'id', 'subject_name', 'course_id', 'staff_id', 
+            'course_details', 'staff_details', 
+            'created_at', 'updated_at'
+        ]

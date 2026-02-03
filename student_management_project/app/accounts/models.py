@@ -34,6 +34,10 @@ class Students(BaseModel):
     gender = models.CharField(max_length=50)
     profile_pic = models.FileField(upload_to="profile_pics/")
     address = models.TextField()
-    # String reference to curriculum app
-    course_id = models.ForeignKey('curriculum.Courses', on_delete=models.DO_NOTHING, default=1)
+    course_id = models.ForeignKey(
+        'curriculum.Courses', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True
+    )
     session_year_id = models.ForeignKey('core.SessionYearModel', on_delete=models.CASCADE, null=True)
