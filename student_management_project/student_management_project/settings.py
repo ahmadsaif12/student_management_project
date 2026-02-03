@@ -1,11 +1,14 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 
+# --- PATHS ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# --- SECURITY ---
 SECRET_KEY = 'django-insecure-mq!xdxowx1h#kl^xh6t%nm4*@g3jc4o2@rmok_i=_1p60_l7$-'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*'] # Update to specific domains in production
 
 # --- APP CONFIGURATION ---
 DJANGO_APPS = [
@@ -19,6 +22,8 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 ]
 
@@ -37,7 +42,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # --- MIDDLEWARE ---
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # Priority #1
+    'corsheaders.middleware.CorsMiddleware',  # Must be at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -49,7 +54,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'student_management_project.urls'
 
-# --- TEMPLATES (Kept for Admin panel, React uses APIs) ---
+# --- TEMPLATES ---
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -66,7 +71,8 @@ TEMPLATES = [
     },
 ]
 
-# --- DATABASE ---
+WSGI_APPLICATION = 'student_management_project.wsgi.application'
+
 # --- DATABASE (PostgreSQL) ---
 DATABASES = {
     'default': {
@@ -74,33 +80,62 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'student_db'),
         'USER': os.getenv('POSTGRES_USER', 'student_user'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'student_pass'),
-        'HOST': os.getenv('DB_HOST', 'db'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-# --- CORS & DRF CONFIG ---
-CORS_ALLOW_ALL_ORIGINS = True 
-CORS_ALLOW_CREDENTIALS = True
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.BasicAuthentication',  
-        'rest_framework.authentication.SessionAuthentication', 
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-}
+# --- PASSWORD VALIDATION ---
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 
-# --- EMAIL SETTINGS (Terminal Output for now) ---
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# --- INTERNATIONALIZATION ---
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
 
 # --- STATIC & MEDIA ---
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- CORS CONFIGURATION ---
+CORS_ALLOW_ALL_ORIGINS = True  # Set to False and use CORS_ALLOWED_ORIGINS in production
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# --- DJANGO REST FRAMEWORK CONFIG ---
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+# --- JWT SETTINGS ---
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+# --- EMAIL SETTINGS ---
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
