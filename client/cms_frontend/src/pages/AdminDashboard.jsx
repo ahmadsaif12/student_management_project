@@ -53,26 +53,20 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  const subjectCourseData = courses.map(course => {
-    const count = subjects.filter(
-      sub => String(sub.course_id) === String(course.id)
-    ).length;
+  const staffStudentData = [
+    { name: 'Students', value: userProfile?.dashboard_stats?.total_students || 0 },
+    { name: 'Staffs', value: totalStaff }
+  ];
 
-    return {
-      name: course.course_name || course.name,
-      value: count
-    };
-  });
+  const subjectCourseData = courses.map(course => ({
+    name: course.course_name || course.name,
+    value: subjects.filter(sub => String(sub.course_id) === String(course.id)).length
+  }));
 
   const studentCourseData = courses.map(course => ({
     name: course.course_name || course.name,
     count: Math.floor(Math.random() * 50) + 10
   }));
-
-  const staffStudentData = [
-    { name: 'Students', value: userProfile?.dashboard_stats?.total_students || 0 },
-    { name: 'Staffs', value: totalStaff }
-  ];
 
   const COLORS = ['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de'];
 
@@ -86,13 +80,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f4f6f9]">
-
       {/* ================= SIDEBAR ================= */}
-      <aside className="w-64 bg-[#343a40] fixed h-full text-[#c2c7d0] shadow-lg">
+      <aside className="w-64 bg-[#343a40] fixed h-full text-[#c2c7d0] shadow-lg overflow-y-auto">
         <div className="p-4 border-b border-[#4b545c] text-white text-lg font-light">
-          Student Management
+          College Management
         </div>
-
         <nav className="py-2">
           {[
             { name: 'Home', path: '/admin-home', icon: 'fas fa-tachometer-alt' },
@@ -114,16 +106,13 @@ const AdminDashboard = () => {
               key={i}
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition ${
-                location.pathname === item.path
-                  ? 'bg-[#007bff] text-white'
-                  : 'hover:bg-[#494e53] hover:text-white'
+                location.pathname === item.path ? 'bg-[#007bff] text-white' : 'hover:bg-[#494e53] hover:text-white'
               }`}
             >
               <i className={`${item.icon} w-5 text-center text-xs`}></i>
               <span className="font-light">{item.name}</span>
             </button>
           ))}
-
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 mt-4 text-sm text-red-400 hover:bg-red-500 hover:text-white border-t border-[#4b545c]"
@@ -134,18 +123,13 @@ const AdminDashboard = () => {
         </nav>
       </aside>
 
-      {/* ================= MAIN ================= */}
       <main className="ml-64 flex-1">
-
-        {/* HEADER */}
         <header className="bg-white p-4 shadow-sm border-b sticky top-0 z-10">
           <h2 className="text-gray-700 text-lg">Admin Dashboard</h2>
         </header>
 
         <div className="p-6">
-
-          {/* STAT BOXES */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatBox
               title="Total Students"
               count={staffStudentData[0].value}
@@ -172,9 +156,8 @@ const AdminDashboard = () => {
             />
           </div>
 
-          {/* CHARTS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
+            {/* Charts remain unchanged */}
             <ChartCard title="Student and Staff Chart" headerColor="bg-[#dd4b39]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -191,14 +174,7 @@ const AdminDashboard = () => {
             <ChartCard title="Total Subjects in Each Course" headerColor="bg-[#00a65a]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={subjectCourseData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={85}
-                    dataKey="value"
-                  >
+                  <Pie data={subjectCourseData} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value">
                     {subjectCourseData.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
@@ -226,17 +202,10 @@ const AdminDashboard = () => {
                 <AreaChart data={studentCourseData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#00c0ef"
-                    fill="#00c0ef"
-                    fillOpacity={0.3}
-                  />
+                  <Area type="monotone" dataKey="count" stroke="#00c0ef" fill="#00c0ef" fillOpacity={0.3} />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
-
           </div>
         </div>
       </main>
@@ -244,19 +213,24 @@ const AdminDashboard = () => {
   );
 };
 
-/* ================= COMPONENTS ================= */
+/* ================= CENTERED STAT BOX ================= */
 const StatBox = ({ title, count, color, onViewMore }) => (
-  <div className={`${color} text-white p-4 rounded shadow flex flex-col justify-between`}>
-    <div>
-      <h3 className="text-3xl font-bold">{count}</h3>
-      <p className="text-xs uppercase opacity-80">{title}</p>
+  <div className={`${color} text-white rounded shadow-lg flex flex-col overflow-hidden transition-transform hover:scale-[1.02]`}>
+    <div className="p-10 flex flex-col items-center justify-center text-center">
+      <span className="text-sm font-bold uppercase tracking-widest opacity-90 mb-2">
+        {title}
+      </span>
+      <h3 className="text-6xl font-black">
+        {count}
+      </h3>
     </div>
+    
     {onViewMore && (
       <button
         onClick={onViewMore}
-        className="mt-2 text-xs  hover:text-gray-200 self-start"
+        className="pb-4 text-xs font-semibold flex items-center justify-center gap-1.5"
       >
-        View More
+        More info <i className="fas fa-arrow-circle-right"></i>
       </button>
     )}
   </div>

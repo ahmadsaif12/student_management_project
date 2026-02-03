@@ -8,6 +8,13 @@ import AddCourse from './pages/AddCourse';
 import ManageCourse from './pages/ManageCourse';
 import ManageSubject from './pages/ManageSubject'; 
 import AddSubject from './pages/AddSubject';
+import AddSesion from './pages/AddSession'
+import ManageSession from './pages/ManageSession'
+import AddStudent from './pages/AddStudent'
+import ManageStudent from './pages/ManageStudent'
+import StaffAdd from './pages/StaffAdd'
+import ManageStaff from './pages/ManageStaff'
+
 
 function App() {
   return (
@@ -21,6 +28,12 @@ function App() {
         <Route path="/manage-course" element={<ManageCourse />} />
         <Route path="/manage-subject" element={<ManageSubject />} />
         <Route path="/add-subject" element={<AddSubject />} />
+        <Route path="/add-session" element={<AddSesion />} />
+        <Route path="/manage-session" element={<ManageSession/>} />
+        <Route path="/add-student" element={<AddStudent />} />
+        <Route path="/manage-student" element={<ManageStudent/>} />
+        <Route path="/add-staff" element={<StaffAdd />} />
+        <Route path="/manage-staff" element={<ManageStaff/>} />
       </Routes>
     </Router>
   );

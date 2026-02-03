@@ -2,7 +2,6 @@ const API_URL = 'http://localhost:8000/api/curriculum';
 
 /**
  * Helper to get fresh headers for every request.
- * This ensures the latest token from localStorage is always used.
  */
 const getHeaders = () => {
   const token = localStorage.getItem('access_token');
@@ -45,7 +44,6 @@ export const addCourse = async (courseName) => {
 
   if (!response.ok) {
     const errorData = await response.json();
-    // Django often returns errors as objects, e.g., { course_name: ["This field is required"] }
     const errorMsg = typeof errorData === 'object' 
       ? Object.values(errorData).flat().join(', ') 
       : 'Failed to add course';
@@ -66,7 +64,7 @@ export const deleteCourse = async (courseId) => {
 // --- SUBJECT OPERATIONS ---
 
 export const getSubjects = async () => {
-  const response = await fetch(`${API_URL}/subjects/`, { // Added /
+  const response = await fetch(`${API_URL}/subjects/`, {
     method: 'GET',
     headers: getHeaders(),
   });
@@ -75,20 +73,18 @@ export const getSubjects = async () => {
 };
 
 export const addSubject = async (subjectData) => {
-  const response = await fetch(`${API_URL}/subjects/`, { // Added /
+  const response = await fetch(`${API_URL}/subjects/`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(subjectData),
   });
 
-  // Check if response is JSON before parsing
   const contentType = response.headers.get("content-type");
   if (!response.ok) {
     if (contentType && contentType.indexOf("application/json") !== -1) {
       const errorData = await response.json();
       throw new Error(Object.values(errorData).flat().join(', '));
     } else {
-      // This catches the HTML error and gives you a hint
       const text = await response.text();
       console.error("Server returned HTML instead of JSON:", text);
       throw new Error(`Server Error: ${response.status}. Check backend logs.`);
@@ -96,6 +92,7 @@ export const addSubject = async (subjectData) => {
   }
   return await response.json();
 };
+
 export const deleteSubject = async (subjectId) => {
   const response = await fetch(`${API_URL}/subjects/${subjectId}/`, {
     method: 'DELETE',
@@ -122,18 +119,35 @@ export const addSession = async (sessionData) => {
     headers: getHeaders(),
     body: JSON.stringify(sessionData),
   });
-  if (!response.ok) throw new Error('Failed to add session');
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMsg = typeof errorData === 'object' 
+      ? Object.values(errorData).flat().join(', ') 
+      : 'Failed to add session';
+    throw new Error(errorMsg);
+  }
   return await response.json();
+};
+
+export const deleteSession = async (sessionId) => {
+  const response = await fetch(`${API_URL}/sessions/${sessionId}/`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to delete session');
+  return true;
 };
 
 // --- BUNDLED EXPORT ---
 export const curriculumService = {
-  addCourse,
   getCourses,
+  addCourse,
   deleteCourse,
-  addSubject,
   getSubjects,
+  addSubject,
   deleteSubject,
   getSessions,
-  addSession
+  addSession,
+  deleteSession 
 };
