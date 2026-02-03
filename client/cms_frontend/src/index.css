@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  /* Landing Page Colors */
+  --color-cms-dark: #343a40;
+  --color-cms-green: #2eb85c;
+  --color-cms-red: #dc3545;
+  
+  /* Hero Text Colors */
+  --color-hero-red: #b91c1c;
+  --color-hero-green: #65a30d;
+  --color-hero-cyan: #06b6d4;
+
+  /* Admin Dashboard Colors */
+  --color-admin-dark: #343a40;
+  --color-admin-teal: #17a2b8;
+  --color-admin-red: #dc3545;
+  --color-admin-yellow: #ffc107;
+  --color-admin-green: #28a745;
+}
+
+@layer utilities {
+  .hero-text-shadow {
+    text-shadow: 2px 4px 8px rgba(0,0,0,0.1);
+  }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b545c;
+  border-radius: 10px;
+}
