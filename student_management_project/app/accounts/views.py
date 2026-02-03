@@ -4,7 +4,7 @@ from rest_framework import status, permissions
 from django.contrib.auth import authenticate, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework_simplejwt.tokens import RefreshToken # New Import
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import CustomUser, Students, Staffs, AdminHOD
 from .serializers import UserSerializer, StudentSerializer, StaffSerializer, AdminHODSerializer
@@ -17,41 +17,68 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         data = request.data
         email = data.get('email')
+        password = data.get('password')
+        first_name = data.get('first_name', '')
+        last_name = data.get('last_name', '')
         
+        if not email or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
         if CustomUser.objects.filter(email=email).exists():
             return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 1. Identify role from email (e.g., alex.student@gmail.com)
         user_type = self.get_user_type_from_email(email)
         if not user_type:
-            return Response({"error": "Invalid email format (e.g., name.staff@school.com)"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "error": "Invalid format. Email must include .hod, .staff, or .student before the @ (e.g., alex.student@gmail.com)"
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        username = email.split('@')[0].split('.')[0]
+        # 2. Extract a safe username (everything before the @)
+        username = email.split('@')[0] 
         
         try:
+            # 3. Create user using create_user (Hashed password)
             user = CustomUser.objects.create_user(
                 username=username, 
                 email=email, 
-                password=data.get('password'),
-                first_name=data.get('first_name'), 
-                last_name=data.get('last_name'), 
+                password=password,
+                first_name=first_name, 
+                last_name=last_name, 
                 user_type=user_type
             )
             
-            if user_type == "1": AdminHOD.objects.get_or_create(admin=user)
-            elif user_type == "2": Staffs.objects.get_or_create(admin=user)
-            elif user_type == "3": Students.objects.get_or_create(admin=user)
+            # 4. Create the corresponding profile record
+            if user_type == "1":
+                AdminHOD.objects.get_or_create(admin=user)
+            elif user_type == "2":
+                Staffs.objects.get_or_create(admin=user, address="")
+            elif user_type == "3":
+                Students.objects.get_or_create(admin=user, address="", gender="")
 
-            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+            return Response({
+                "message": "User registered successfully",
+                "user_type": user_type
+            }, status=status.HTTP_201_CREATED)
+            
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_user_type_from_email(self, email_id):
+        """Helper to map name.role@domain.com to user_type"""
         try:
-            role_part = email_id.split('@')[0].split('.')[1]
-            return CustomUser.EMAIL_TO_USER_TYPE_MAP.get(role_part)
-        except: return None
+            # Splits 'alex.student@gmail.com' -> 'alex.student' -> 'student'
+            role_part = email_id.split('@')[0].split('.')[1].lower()
+            mapping = {
+                'hod': '1',
+                'staff': '2',
+                'student': '3'
+            }
+            return mapping.get(role_part)
+        except (IndexError, AttributeError):
+            return None
 
-# --- UPDATED LOGIN (JWT) ---
+# --- LOGIN ---
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -60,25 +87,34 @@ class LoginAPIView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         
-        # In CustomUser, authenticate usually takes username, but if you 
-        # customized it to take email, this will work.
-        user = authenticate(request, username=email, password=password)
+        if not email or not password:
+            return Response({"error": "Please provide both email and password"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-                "user_type": user.user_type,
-                "user": UserSerializer(user).data,
-                "message": "Login Successful"
-            }, status=status.HTTP_200_OK)
+        # IMPORTANT: Since USERNAME_FIELD = 'email', we must pass email=email here
+        user = authenticate(request, email=email, password=password)
+
+        if user is not None:
+            if user.is_active:
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user_type": user.user_type,
+                    "user": UserSerializer(user).data,
+                    "message": "Login Successful"
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "This account has been disabled"}, status=status.HTTP_403_FORBIDDEN)
             
-        return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "Invalid Credentials. Check your email and password."}, status=status.HTTP_401_UNAUTHORIZED)
 
 # --- LOGOUT & PROFILE ---
 class LogoutAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
+        # For JWT, logout is usually handled by deleting the token on the frontend,
+        # but we can blacklist the token if blacklist app is configured.
         logout(request)
         return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
 
@@ -104,4 +140,4 @@ class ProfileAPIView(APIView):
                 profile = Students.objects.get(admin=user)
                 return Response(StudentSerializer(profile).data)
         except Exception as e:
-            return Response({"error": str(e)}, status=404)
+            return Response({"error": f"Profile not found: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)

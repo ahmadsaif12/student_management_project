@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- SECURITY ---
 SECRET_KEY = 'django-insecure-mq!xdxowx1h#kl^xh6t%nm4*@g3jc4o2@rmok_i=_1p60_l7$-'
 DEBUG = True
-ALLOWED_HOSTS = ['*'] # Update to specific domains in production
+ALLOWED_HOSTS = ['*']
 
 # --- APP CONFIGURATION ---
 DJANGO_APPS = [
@@ -37,7 +37,7 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# Identity
+# Identity - Crucial for Custom User Models
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # --- MIDDLEWARE ---
@@ -102,18 +102,17 @@ USE_TZ = True
 # --- STATIC & MEDIA ---
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- CORS CONFIGURATION ---
-CORS_ALLOW_ALL_ORIGINS = True  # Set to False and use CORS_ALLOWED_ORIGINS in production
+CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 # --- DJANGO REST FRAMEWORK CONFIG ---
@@ -123,7 +122,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ],
 }
 
@@ -133,9 +131,17 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
-# --- EMAIL SETTINGS ---
+# --- AUTHENTICATION ---
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
