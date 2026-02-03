@@ -19,6 +19,7 @@ class CustomUser(AbstractUser):
         'staff': STAFF,
         'student': STUDENT
     }
+    gender = models.CharField(max_length=10, default='Male')
 class AdminHOD(BaseModel):
     id = models.AutoField(primary_key=True)
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

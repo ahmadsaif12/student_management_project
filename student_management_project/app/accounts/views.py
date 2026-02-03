@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.contrib.auth import authenticate, logout
@@ -144,12 +145,33 @@ class ProfileAPIView(APIView):
             return Response({"error": f"Profile not found: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)
         
 
-class StaffListAPIView(generics.ListAPIView):
-    """
-    Returns a list of all users who are Staff (user_type='2')
-    """
+class StaffListAPIView(generics.ListCreateAPIView):
+
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserSerializer
+    def get_serializer_class(self):
+        # Use StaffSerializer for POST to handle profile creation
+        if self.request.method == 'POST':
+            return StaffSerializer
+        return StaffSerializer # Or UserSerializer if you prefer a simpler list
 
     def get_queryset(self):
-        return CustomUser.objects.filter(user_type='2')
+        # We query Staffs model directly to get the profiles
+        return Staffs.objects.all()
+
+class StaffDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+   
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffSerializer
+    queryset = Staffs.objects.all()
+    lookup_field = 'pk'
+    
+class StudentViewSet(viewsets.ModelViewSet):
+    queryset = Students.objects.all().select_related('admin', 'course_id')
+    serializer_class = StudentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_destroy(self, instance):
+        # Ensure the User account is deleted when the Student is removed
+        user = instance.admin
+        instance.delete()
+        user.delete()

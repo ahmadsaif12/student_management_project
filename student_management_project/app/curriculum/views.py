@@ -43,3 +43,7 @@ class SessionListCreateView(generics.ListCreateAPIView):
     queryset = SessionYearModel.objects.all()
     serializer_class = SessionYearSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class SessionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = SessionYearModel.objects.all()
+    serializer_class = SessionYearModel

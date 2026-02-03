@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     CourseListCreateView, CourseDetailView,
     SubjectListCreateView, SubjectDetailView,
-    SessionListCreateView
+    SessionListCreateView,SessionDetailView
 )
 
 urlpatterns = [
@@ -16,4 +16,5 @@ urlpatterns = [
 
     # Paths for 'Manage Session' & 'Add Session'
     path('sessions/', SessionListCreateView.as_view(), name='session-list-create'),
+    path('sessions/<int:pk>/', SessionDetailView.as_view(), name='session-detail'),
 ]
