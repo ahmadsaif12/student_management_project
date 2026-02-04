@@ -165,27 +165,89 @@ class StudentResultAPIView(APIView):
         return Response({"message": "Marks saved", "created": created})
 
 
-# --- 4. PUBLIC & FEEDBACK ---
+# --- 4. FEEDBACK & COMMUNICATIONS ---
+
+class FeedbackAPIView(APIView):
+    """Handles submission (POST) and personal history (GET) for Staff/Students."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        msg = request.data.get('feedback')
+        if not msg:
+            return Response({"error": "Feedback text is required"}, status=400)
+        try:
+            if hasattr(user, 'staffs'): 
+                FeedBackStaffs.objects.create(staff_id=user.staffs, feedback=msg)
+            elif hasattr(user, 'students'): 
+                FeedBackStudent.objects.create(student_id=user.students, feedback=msg)
+            return Response({"message": "Feedback sent successfully"})
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+    def get(self, request):
+        user = request.user
+        data = []
+        if hasattr(user, 'staffs'):
+            feedbacks = FeedBackStaffs.objects.filter(staff_id=user.staffs).order_by('-created_at')
+            data = [{"id": f.id, "feedback": f.feedback, "reply": f.feedback_reply, "date": f.created_at} for f in feedbacks]
+        elif hasattr(user, 'students'):
+            feedbacks = FeedBackStudent.objects.filter(student_id=user.students).order_by('-created_at')
+            data = [{"id": f.id, "feedback": f.feedback, "reply": f.feedback_reply, "date": f.created_at} for f in feedbacks]
+        
+        return Response(data)
+
+# app/operations/views.py
+
+class AdminFeedbackView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        # Fetch both and label them for the React frontend
+        student_fb = FeedBackStudent.objects.select_related('student_id__admin').all()
+        staff_fb = FeedBackStaffs.objects.select_related('staff_id__admin').all()
+
+        data = [
+            {
+                "id": f.id,
+                "user": f.student_id.admin.get_full_name(),
+                "message": f.feedback,
+                "reply": f.feedback_reply,
+                "type": "Student",
+                "date": f.created_at
+            } for f in student_fb
+        ] + [
+            {
+                "id": f.id,
+                "user": f.staff_id.admin.get_full_name(),
+                "message": f.feedback,
+                "reply": f.feedback_reply,
+                "type": "Staff",
+                "date": f.created_at
+            } for f in staff_fb
+        ]
+        
+        # Sort by latest date
+        data.sort(key=lambda x: x['date'], reverse=True)
+        return Response(data)
+
+    def post(self, request):
+        fb_id = request.data.get('id')
+        reply = request.data.get('reply')
+        user_type = request.data.get('type') # 'Student' or 'Staff'
+
+        model = FeedBackStudent if user_type == "Student" else FeedBackStaffs
+        try:
+            fb = model.objects.get(id=fb_id)
+            fb.feedback_reply = reply
+            fb.save()
+            return Response({"message": "Reply submitted"})
+        except model.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+# --- 5. PUBLIC & LANDING ---
 
 class ContactCreateView(CreateAPIView):
     """Landing page contact form."""
     queryset = ContactMessage.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [permissions.AllowAny]
-
-@method_decorator(csrf_exempt, name='dispatch')
-class FeedbackAPIView(APIView):
-    """Submit feedback for both Staff and Students."""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        msg = request.data.get('feedback')
-        try:
-            if hasattr(user, 'staffs'): 
-                FeedBackStaffs.objects.create(staff_id=user.staffs, feedback=msg)
-            elif hasattr(user, 'students'): 
-                FeedBackStudent.objects.create(student_id=user.students, feedback=msg)
-            return Response({"message": "Feedback sent"})
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)

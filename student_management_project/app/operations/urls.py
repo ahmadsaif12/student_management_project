@@ -6,6 +6,7 @@ from .views import (
     StaffLeaveAPIView,
     AdminLeaveActionAPIView,
     FeedbackAPIView,
+    AdminFeedbackView,     # Added
     StudentResultAPIView,
     ContactCreateView
 )
@@ -17,13 +18,17 @@ urlpatterns = [
     path('student-dashboard-stats/', StudentHomeStats.as_view(), name='api_student_dashboard'),
 
     # --- LEAVE MANAGEMENT ---
-    # Staff apply/view history
     path('leave/staff/', StaffLeaveAPIView.as_view(), name='api_staff_leave'),
-    # Admin approves or rejects
+    # Note: Ensure you have a StudentLeaveAPIView if students need to apply for leave
     path('leave/action/', AdminLeaveActionAPIView.as_view(), name='api_leave_action'),
 
-    # --- FEEDBACK & RESULTS ---
+    # --- FEEDBACK & COMMUNICATIONS ---
+    # For Students/Staff to submit and view their own
     path('feedback/submit/', FeedbackAPIView.as_view(), name='api_feedback_submit'),
+    # For Admin to view all and reply
+    path('admin-feedback/', AdminFeedbackView.as_view(), name='api_admin_feedback'),
+
+    # --- ACADEMICS & RESULTS ---
     path('manage-results/', StudentResultAPIView.as_view(), name='api_manage_results'),
 
     # --- PUBLIC SERVICES ---

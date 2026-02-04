@@ -1,12 +1,11 @@
-from rest_framework.views import APIView
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework import status, permissions
 from django.contrib.auth import authenticate, logout
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import status, permissions, generics, viewsets
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics
 
 from .models import CustomUser, Students, Staffs, AdminHOD
 from .serializers import UserSerializer, StudentSerializer, StaffSerializer, AdminHODSerializer
@@ -29,18 +28,15 @@ class RegistrationAPIView(APIView):
         if CustomUser.objects.filter(email=email).exists():
             return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 1. Identify role from email (e.g., alex.student@gmail.com)
         user_type = self.get_user_type_from_email(email)
         if not user_type:
             return Response({
-                "error": "Invalid format. Email must include .hod, .staff, or .student before the @ (e.g., alex.student@gmail.com)"
+                "error": "Invalid format. Email must include .hod, .staff, or .student before the @ (e.g., alex.staff@domain.com)"
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # 2. Extract a safe username (everything before the @)
         username = email.split('@')[0] 
         
         try:
-            # 3. Create user using create_user (Hashed password)
             user = CustomUser.objects.create_user(
                 username=username, 
                 email=email, 
@@ -50,7 +46,7 @@ class RegistrationAPIView(APIView):
                 user_type=user_type
             )
             
-            # 4. Create the corresponding profile record
+            # Auto-create profile records
             if user_type == "1":
                 AdminHOD.objects.get_or_create(admin=user)
             elif user_type == "2":
@@ -67,15 +63,9 @@ class RegistrationAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_user_type_from_email(self, email_id):
-        """Helper to map name.role@domain.com to user_type"""
         try:
-            # Splits 'alex.student@gmail.com' -> 'alex.student' -> 'student'
             role_part = email_id.split('@')[0].split('.')[1].lower()
-            mapping = {
-                'hod': '1',
-                'staff': '2',
-                'student': '3'
-            }
+            mapping = {'hod': '1', 'staff': '2', 'student': '3'}
             return mapping.get(role_part)
         except (IndexError, AttributeError):
             return None
@@ -90,12 +80,11 @@ class LoginAPIView(APIView):
         password = request.data.get('password')
         
         if not email or not password:
-            return Response({"error": "Please provide both email and password"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Provide both email and password"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # IMPORTANT: Since USERNAME_FIELD = 'email', we must pass email=email here
         user = authenticate(request, email=email, password=password)
 
-        if user is not None:
+        if user:
             if user.is_active:
                 refresh = RefreshToken.for_user(user)
                 return Response({
@@ -105,27 +94,18 @@ class LoginAPIView(APIView):
                     "user": UserSerializer(user).data,
                     "message": "Login Successful"
                 }, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "This account has been disabled"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Account disabled"}, status=status.HTTP_403_FORBIDDEN)
             
-        return Response({"error": "Invalid Credentials. Check your email and password."}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# --- LOGOUT & PROFILE ---
-class LogoutAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        # For JWT, logout is usually handled by deleting the token on the frontend,
-        # but we can blacklist the token if blacklist app is configured.
-        logout(request)
-        return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
-
+# --- PROFILE & DASHBOARD ---
 class ProfileAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
         try:
+            # ADMIN DASHBOARD
             if user.user_type == '1':
                 profile = AdminHOD.objects.get(admin=user)
                 return Response({
@@ -135,43 +115,58 @@ class ProfileAPIView(APIView):
                         "total_staffs": Staffs.objects.count(),
                     }
                 })
+            
+            # STAFF DASHBOARD
             elif user.user_type == '2':
-                profile = Staffs.objects.get(admin=user)
-                return Response(StaffSerializer(profile).data)
+                try:
+                    profile = Staffs.objects.get(admin=user)
+                    return Response({
+                        "my_profile": StaffSerializer(profile).data,
+                        "cards": {
+                            "students_under_me": 0, # Logic: Students.objects.filter(course_id__subjects__staff_id=profile).distinct().count()
+                            "total_attendance_taken": 0, 
+                            "total_leave_taken": 0,
+                            "total_subjects": 0 # Logic: Subjects.objects.filter(staff_id=profile).count()
+                        },
+                        "user_type": "2"
+                    })
+                except Staffs.DoesNotExist:
+                    return Response({"error": "Staff profile missing"}, status=404)
+
+            # STUDENT DASHBOARD
             elif user.user_type == '3':
                 profile = Students.objects.get(admin=user)
                 return Response(StudentSerializer(profile).data)
+
         except Exception as e:
-            return Response({"error": f"Profile not found: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
+# --- STAFF MANAGEMENT ---
 class StaffListAPIView(generics.ListCreateAPIView):
-
-    permission_classes = [permissions.IsAuthenticated]
-    def get_serializer_class(self):
-        # Use StaffSerializer for POST to handle profile creation
-        if self.request.method == 'POST':
-            return StaffSerializer
-        return StaffSerializer # Or UserSerializer if you prefer a simpler list
-
-    def get_queryset(self):
-        # We query Staffs model directly to get the profiles
-        return Staffs.objects.all()
-
-class StaffDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-   
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = StaffSerializer
     queryset = Staffs.objects.all()
-    lookup_field = 'pk'
-    
-class StudentViewSet(viewsets.ModelViewSet):
-    queryset = Students.objects.all().select_related('admin', 'course_id')
-    serializer_class = StudentSerializer
+
+class StaffDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StaffSerializer
+    queryset = Staffs.objects.all()
+
+# --- STUDENT MANAGEMENT ---
+class StudentViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = StudentSerializer
+    queryset = Students.objects.all().select_related('admin', 'course_id')
 
     def perform_destroy(self, instance):
-        # Ensure the User account is deleted when the Student is removed
         user = instance.admin
         instance.delete()
         user.delete()
+
+# --- LOGOUT ---
+class LogoutAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)

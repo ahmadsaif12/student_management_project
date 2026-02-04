@@ -46,4 +46,4 @@ class SessionListCreateView(generics.ListCreateAPIView):
 
 class SessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = SessionYearModel.objects.all()
-    serializer_class = SessionYearModel
+    serializer_class = SessionYearSerializer
