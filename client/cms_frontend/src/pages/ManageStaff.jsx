@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import { getStaffList, deleteStaff } from '../api/authService'; // Use the service!
 
 const ManageStaff = () => {
   const [staff, setStaff] = useState([]);
@@ -9,8 +9,9 @@ const ManageStaff = () => {
 
   const fetchStaff = async () => {
     try {
-      const res = await axiosInstance.get('staff/');
-      setStaff(res.data);
+      // This now calls /api/accounts/staff/ via the service
+      const data = await getStaffList();
+      setStaff(data);
     } catch (err) { 
       console.error("Fetch error:", err); 
     } finally { 
@@ -23,9 +24,13 @@ const ManageStaff = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Delete this staff profile?")) {
       try {
-        await axiosInstance.delete(`staff/${id}/`);
+        // Updated to use the correct prefixed path via service
+        await deleteStaff(id); 
         setStaff(staff.filter(s => s.id !== id));
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) { 
+        alert("Delete failed: Check console for details"); 
+        console.error(err);
+      }
     }
   };
 
@@ -38,7 +43,6 @@ const ManageStaff = () => {
           <p className="text-slate-500 text-[10px] font-bold tracking-widest">ADMINISTRATION PANEL</p>
         </div>
         
-        {/* Navigation Buttons */}
         <div className="flex gap-3">
           <button 
             onClick={() => navigate('/admin-home')}
@@ -68,7 +72,7 @@ const ManageStaff = () => {
           </thead>
           <tbody className="bg-white">
             {loading ? (
-              <tr><td colSpan="3" className="p-20 text-center font-bold text-slate-900 italic">SYNCING...</td></tr>
+              <tr><td colSpan="3" className="p-20 text-center font-bold text-slate-900 italic tracking-[0.5em]">SYNCING...</td></tr>
             ) : staff.length === 0 ? (
               <tr><td colSpan="3" className="p-20 text-center font-bold text-slate-900">NO STAFF RECORDS FOUND</td></tr>
             ) : (
