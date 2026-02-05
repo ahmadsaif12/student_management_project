@@ -200,9 +200,14 @@ class FeedbackAPIView(APIView):
 # app/operations/views.py
 
 class AdminFeedbackView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    # Change from IsAdminUser to IsAuthenticated so the request actually reaches the GET method
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        # Manual check for your custom admin role (user_type '1')
+        if request.user.user_type != '1':
+            return Response({"detail": "Forbidden: Admin access only."}, status=403)
+
         # Fetch both and label them for the React frontend
         student_fb = FeedBackStudent.objects.select_related('student_id__admin').all()
         staff_fb = FeedBackStaffs.objects.select_related('staff_id__admin').all()
@@ -211,18 +216,20 @@ class AdminFeedbackView(APIView):
             {
                 "id": f.id,
                 "user": f.student_id.admin.get_full_name(),
+                "email": f.student_id.admin.email, # Added email for your UI
                 "message": f.feedback,
                 "reply": f.feedback_reply,
-                "type": "Student",
+                "type": "Student", # Matches your React filter logic
                 "date": f.created_at
             } for f in student_fb
         ] + [
             {
                 "id": f.id,
                 "user": f.staff_id.admin.get_full_name(),
+                "email": f.staff_id.admin.email, # Added email for your UI
                 "message": f.feedback,
                 "reply": f.feedback_reply,
-                "type": "Staff",
+                "type": "Staff", # Matches your React filter logic
                 "date": f.created_at
             } for f in staff_fb
         ]
@@ -232,7 +239,11 @@ class AdminFeedbackView(APIView):
         return Response(data)
 
     def post(self, request):
-        fb_id = request.data.get('id')
+        if request.user.user_type != '1':
+            return Response({"detail": "Forbidden"}, status=403)
+
+        # IMPORTANT: Your React code sends 'feedback_id', not 'id'
+        fb_id = request.data.get('feedback_id') 
         reply = request.data.get('reply')
         user_type = request.data.get('type') # 'Student' or 'Staff'
 
@@ -243,7 +254,7 @@ class AdminFeedbackView(APIView):
             fb.save()
             return Response({"message": "Reply submitted"})
         except model.DoesNotExist:
-            return Response({"error": "Not found"}, status=404)
+            return Response({"error": "Feedback record not found"}, status=404)
 # --- 5. PUBLIC & LANDING ---
 
 class ContactCreateView(CreateAPIView):
@@ -251,3 +262,103 @@ class ContactCreateView(CreateAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [permissions.AllowAny]
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class StudentLeaveAPIView(APIView):
+    """Student apply for leave (POST) and view their own history (GET)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not hasattr(request.user, 'students'):
+            return Response({"error": "Student profile not found."}, status=403)
+        # Fetching leave records for the logged-in student
+        leaves = LeaveReportStudent.objects.filter(student_id=request.user.students).order_by('-created_at')
+        # Map the data to JSON format
+        data = [
+            {
+                "id": l.id,
+                "leave_date": l.leave_date,
+                "leave_message": l.leave_message,
+                "leave_status": l.leave_status,
+                "date": l.created_at
+            } for l in leaves
+        ]
+        return Response(data)
+
+    def post(self, request):
+        if not hasattr(request.user, 'students'):
+            return Response({"error": "Student profile not found."}, status=403)
+        try:
+            # Creating a new leave record with status 0 (Pending)
+            LeaveReportStudent.objects.create(
+                student_id=request.user.students,
+                leave_date=request.data.get('leave_date'),
+                leave_message=request.data.get('leave_message'),
+                leave_status=0 
+            )
+            return Response({"message": "Leave applied successfully"}, status=201)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+        
+class AdminStudentLeaveView(APIView):
+    # Change to IsAuthenticated to handle custom role logic
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # 1. Custom Role Check
+            # Assuming '1' is Admin. Adjust based on your actual CustomUser model.
+            if request.user.user_type not in ['1']: 
+                return Response(
+                    {"detail": "Access denied. Admin privileges required."}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # 2. Fetch Data
+            leaves = LeaveReportStudent.objects.select_related('student_id__admin').all().order_by('-created_at')
+            
+            data = []
+            for l in leaves:
+                data.append({
+                    "id": l.id,
+                    "student_name": l.student_id.admin.get_full_name(), 
+                    "leave_date": str(l.leave_date),
+                    "leave_message": l.leave_message,
+                    "leave_status": int(l.leave_status),
+                    "applied_on": l.created_at.strftime("%Y-%m-%d")
+                })
+            
+            return Response(data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+class AdminLeaveActionAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        leave_id = request.data.get('leave_id')
+        leave_type = request.data.get('type')  
+        new_status = request.data.get('status') 
+
+        try:
+            if leave_type == 'student':
+                leave_record = LeaveReportStudent.objects.get(id=leave_id)
+            elif leave_type == 'staff':
+                leave_record = LeaveReportStaff.objects.get(id=leave_id)
+            else:
+                return Response({"error": "Invalid leave type"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update the status
+            leave_record.leave_status = new_status
+            leave_record.save()
+
+            return Response({"message": "Status updated successfully"}, status=status.HTTP_200_OK)
+
+        except (LeaveReportStudent.DoesNotExist, LeaveReportStaff.DoesNotExist):
+            return Response({"error": "Leave record not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

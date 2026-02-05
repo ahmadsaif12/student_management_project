@@ -5,8 +5,8 @@ from .views import (
     GetStudentsForAttendance,
     SaveAttendanceAPIView,
     GetAttendanceDataAPIView,
-    StaffSubjectList,  # Added for dropdowns
-    SessionYearList    # Added for dropdowns
+    StaffSubjectList,  
+    SessionYearList   
 )
 
 urlpatterns = [
