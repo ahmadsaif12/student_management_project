@@ -83,7 +83,7 @@ const StudentHome = () => {
           {/* FIXED: Added onClick to Leave Application */}
           <SidebarItem icon="fas fa-file-signature" label="Leave Application" onClick={() => navigate('/apply-leave')} />
           {/* ADDED: Feedback link */}
-          <SidebarItem icon="fas fa-comment-dots" label="Feedback" onClick={() => navigate('/feedback')} />
+          <SidebarItem icon="fas fa-comment-dots" label="Feedback" onClick={() => navigate('/student-feedback')} />
         </nav>
       </aside>
 

@@ -31,10 +31,11 @@ import ManageStaff from './pages/ManageStaff';
 // --- ATTENDANCE, LEAVES & COMMUNICATIONS ---
 import ViewAttendance from './pages/ViewAttendance';
 import TakeAttendance from './pages/TakeAttendance';
-import AdminLeaveManagement from './pages/AdminLeaveManagement'; // General or Staff Leave
-import AdminStudentLeave from './pages/AdminStudentLeave';     // The new Student Leave Panel
-import FeedbackPanel from './pages/FeedbackPanel'; 
+import AdminLeaveManagement from './pages/AdminLeaveManagement'; 
+import AdminStudentLeave from './pages/AdminStudentLeave';     
+import AdminFeedback from './pages/AdminFeedback'; 
 import StudentLeave from './pages/StudentLeave'; 
+import FeedbackPanel from './pages/FeedbackPanel'; // Shared by Students/Staff
 
 // --- PROTECTED ROUTE COMPONENT ---
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -43,6 +44,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!token) return <Navigate to="/login" />;
   
+  // If a specific role is required and user doesn't have it, redirect to their home
   if (allowedRoles && !allowedRoles.includes(role)) {
     const redirects = {
       '1': '/admin-home',
@@ -67,37 +69,48 @@ function App() {
         {/* --- ADMIN ONLY (Role 1) --- */}
         <Route path="/admin-home" element={<ProtectedRoute allowedRoles={['1']}><AdminDashboard /></ProtectedRoute>} />
         
-        {/* Academic Setup */}
         <Route path="/add-course" element={<ProtectedRoute allowedRoles={['1']}><AddCourse /></ProtectedRoute>} />
-        <Route path="/manage-course" element={<ProtectedRoute allowedRoles={['1']}><ManageCourse /></ProtectedRoute>} />
         <Route path="/add-subject" element={<ProtectedRoute allowedRoles={['1']}><AddSubject /></ProtectedRoute>} />
-        <Route path="/manage-subject" element={<ProtectedRoute allowedRoles={['1']}><ManageSubject /></ProtectedRoute>} />
         <Route path="/add-session" element={<ProtectedRoute allowedRoles={['1']}><AddSesion /></ProtectedRoute>} />
-        <Route path="/manage-session" element={<ProtectedRoute allowedRoles={['1']}><ManageSession/></ProtectedRoute>} />
-        
-        {/* User Management */}
         <Route path="/add-student" element={<ProtectedRoute allowedRoles={['1']}><AddStudent /></ProtectedRoute>} />
-        <Route path="/manage-student" element={<ProtectedRoute allowedRoles={['1']}><ManageStudent/></ProtectedRoute>} />
         <Route path="/add-staff" element={<ProtectedRoute allowedRoles={['1']}><StaffAdd /></ProtectedRoute>} />
+
+        <Route path="/edit-course/:id" element={<ProtectedRoute allowedRoles={['1']}><AddCourse isEdit={true} /></ProtectedRoute>} />
+        <Route path="/edit-subject/:id" element={<ProtectedRoute allowedRoles={['1']}><AddSubject isEdit={true} /></ProtectedRoute>} />
+        <Route path="/edit-session/:id" element={<ProtectedRoute allowedRoles={['1']}><AddSesion isEdit={true} /></ProtectedRoute>} />
+        <Route path="/edit-student/:id" element={<ProtectedRoute allowedRoles={['1']}><AddStudent isEdit={true} /></ProtectedRoute>} />
+        <Route path="/edit-staff/:id" element={<ProtectedRoute allowedRoles={['1']}><StaffAdd isEdit={true} /></ProtectedRoute>} />
+        
+        <Route path="/manage-course" element={<ProtectedRoute allowedRoles={['1']}><ManageCourse /></ProtectedRoute>} />
+        <Route path="/manage-subject" element={<ProtectedRoute allowedRoles={['1']}><ManageSubject /></ProtectedRoute>} />
+        <Route path="/manage-session" element={<ProtectedRoute allowedRoles={['1']}><ManageSession/></ProtectedRoute>} />
+        <Route path="/manage-student" element={<ProtectedRoute allowedRoles={['1']}><ManageStudent/></ProtectedRoute>} />
         <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={['1']}><ManageStaff/></ProtectedRoute>} />
         
-        {/* Admin Leave Panels */}
         <Route path="/manage-staff-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminLeaveManagement /></ProtectedRoute>} />
         <Route path="/manage-student-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminStudentLeave /></ProtectedRoute>} />
+        
+        {/* Admin Feedback (The Inbox View) */}
+        <Route path="/feedback" element={<ProtectedRoute allowedRoles={['1']}><AdminFeedback /></ProtectedRoute>} />
 
         {/* --- STAFF ONLY (Role 2) --- */}
         <Route path="/staff-home" element={<ProtectedRoute allowedRoles={['2']}><StaffHome /></ProtectedRoute>} />
         <Route path="/take-attendance" element={<ProtectedRoute allowedRoles={['2']}><TakeAttendance /></ProtectedRoute>} />
         <Route path="/staff-leave" element={<ProtectedRoute allowedRoles={['2']}><StudentLeave type="staff" /></ProtectedRoute>} />
+        
+        {/* Staff-specific feedback history */}
+        <Route path="/staff-feedback" element={<ProtectedRoute allowedRoles={['2']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- STUDENT ONLY (Role 3) --- */}
         <Route path="/student-home" element={<ProtectedRoute allowedRoles={['3']}><StudentHome /></ProtectedRoute>} />
         <Route path="/apply-leave" element={<ProtectedRoute allowedRoles={['3']}><StudentLeave type="student" /></ProtectedRoute>} />
+        
+        {/* Student-specific feedback history */}
+        <Route path="/student-feedback" element={<ProtectedRoute allowedRoles={['3']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- SHARED PROTECTED ROUTES --- */}
         <Route path="/view-attendance" element={<ProtectedRoute><ViewAttendance /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/feedback" element={<ProtectedRoute><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- FALLBACK --- */}
         <Route path="*" element={<Navigate to="/login" />} />

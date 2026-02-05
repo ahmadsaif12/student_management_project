@@ -1,13 +1,17 @@
 import axiosInstance from './axiosInstance';
 
-// --- AUTHENTICATION ---
+/**
+ * --- AUTHENTICATION ---
+ * Handles login, registration, profile, and logout.
+ */
+
 export const loginUser = async (credentials) => {
   try {
     const response = await axiosInstance.post('accounts/login/', credentials);
     if (response.data.access) {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
-      localStorage.setItem('user_role', response.data.user_type); // Matches ProtectedRoute logic
+      localStorage.setItem('user_role', response.data.user_type);
       localStorage.setItem('user_name', response.data.user.full_name);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
@@ -49,7 +53,10 @@ export const logoutUser = async () => {
   }
 };
 
-// --- STUDENT MANAGEMENT (Admin Only) ---
+/**
+ * --- STUDENT MANAGEMENT (Admin Only) ---
+ */
+
 export const getStudents = async () => {
   try {
     const response = await axiosInstance.get('accounts/students/');
@@ -79,7 +86,19 @@ export const deleteStudent = async (studentId) => {
   }
 };
 
-// --- STAFF MANAGEMENT (Admin Only) ---
+/**
+ * --- STAFF MANAGEMENT (Admin Only) ---
+ */
+
+export const getStaffList = async () => {
+  try {
+    const response = await axiosInstance.get('accounts/staff/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Failed to load staff list" };
+  }
+};
+
 export const addStaff = async (staffFormData) => {
   try {
     const response = await axiosInstance.post('accounts/staff/', staffFormData, {
@@ -88,15 +107,6 @@ export const addStaff = async (staffFormData) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: "Failed to create staff profile" };
-  }
-};
-
-export const getStaffList = async () => {
-  try {
-    const response = await axiosInstance.get('accounts/staff/');
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { error: "Failed to load staff list" };
   }
 };
 
@@ -109,8 +119,12 @@ export const deleteStaff = async (staffId) => {
   }
 };
 
-// --- FEEDBACK MANAGEMENT ---
-// Matches Django: path('feedback/', FeedbackAPIView.as_view())
+/**
+ * --- FEEDBACK MANAGEMENT ---
+ * Handles student submission and admin responses.
+ */
+
+// For Students/Staff to submit their own feedback
 export const submitFeedback = async (feedbackText) => {
   try {
     const response = await axiosInstance.post('operations/feedback/', {
@@ -122,6 +136,7 @@ export const submitFeedback = async (feedbackText) => {
   }
 };
 
+// For Students/Staff to see their own history
 export const getFeedbackHistory = async () => {
   try {
     const response = await axiosInstance.get('operations/feedback/');
@@ -131,7 +146,30 @@ export const getFeedbackHistory = async () => {
   }
 };
 
-//leave management
+// ADMIN ONLY: To see all feedback from everyone
+export const getAdminFeedback = async () => {
+  try {
+    const response = await axiosInstance.get('operations/admin-feedback/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Failed to load admin feedback" };
+  }
+};
+
+// ADMIN ONLY: To reply to a specific feedback
+
+export const replyToFeedback = async (feedbackId, replyMessage, type) => {
+  return await axiosInstance.post('operations/admin-feedback/', {
+    feedback_id: feedbackId,
+    reply: replyMessage,
+    type: type // 'Student' or 'Staff'
+  });
+};
+
+/**
+ * --- LEAVE MANAGEMENT ---
+ */
+
 export const applyStudentLeave = async (leaveData) => {
   try {
     const response = await axiosInstance.post('operations/leave/student/', leaveData);
@@ -149,6 +187,7 @@ export const getStudentLeaveHistory = async () => {
     throw error.response?.data || { error: "Failed to load history" };
   }
 };
+
 export const getAdminStudentLeaves = async () => {
   try {
     const response = await axiosInstance.get('operations/admin/student-leaves/');
@@ -171,5 +210,3 @@ export const updateLeaveStatus = async (leaveId, type, status) => {
     throw error.response?.data || { error: "Failed to update leave status" };
   }
 };
-
-
