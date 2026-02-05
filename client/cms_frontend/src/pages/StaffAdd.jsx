@@ -19,7 +19,7 @@ const StaffAdd = () => {
     setLoading(true);
     try {
       // FIXED URL: Removed 'accounts/' prefix to avoid duplication
-      await axiosInstance.post('staff/', formData);
+      await axiosInstance.post('accounts/staff/', formData);
       alert("Staff registered successfully!");
       navigate('/manage-staff');
     } catch (err) {

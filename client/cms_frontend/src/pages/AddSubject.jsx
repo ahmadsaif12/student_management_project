@@ -29,7 +29,7 @@ const AddSubject = () => {
         
         if (response.ok) {
           const staffData = await response.json();
-          setStaffMembers(staffData);
+          setStaffMembers(staffData); // API returns full_name
         } else {
           console.error("Failed to fetch staff: ", response.status);
         }
@@ -119,12 +119,12 @@ const AddSubject = () => {
               required 
               value={staffId}
               onChange={(e) => setStaffId(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm"
+              className="w-full p-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none text-sm bg-green-50 text-black"
             >
               <option value="">Select Staff</option>
               {staffMembers.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.first_name} {s.last_name}
+                  {s.full_name} {/* <-- use full_name from API */}
                 </option>
               ))}
             </select>
