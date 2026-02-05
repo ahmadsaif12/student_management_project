@@ -6,6 +6,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -14,20 +15,38 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+
     try {
-      
       const response = await loginUser({
         email: formData.email.toLowerCase().trim(), 
         password: formData.password
       });
+
+      console.log("Login Success Response:", response); // For debugging
+
+      // --- THE CRITICAL FIX: SAVE TO LOCAL STORAGE ---
+      // If your response has 'token' or 'access', make sure the key matches App.js
+      localStorage.setItem('access_token', response.access || response.token); 
+      localStorage.setItem('user_role', String(response.user_type)); 
+      localStorage.setItem('user_name', response.first_name || 'User');
+
+      // --- NAVIGATE BASED ON SAVED ROLE ---
+      const role = String(response.user_type);
       
-    
-      if (response.user_type === '1') navigate('/admin-home');
-      else if (response.user_type === '2') navigate('/staff-home');
-      else navigate('/student-home');
+      if (role === '1') navigate('/admin-home');
+      else if (role === '2') navigate('/staff-home');
+      else if (role === '3') navigate('/student-home');
+      else {
+        setError("Role not recognized. Contact admin.");
+        localStorage.clear();
+      }
 
     } catch (err) {
+      console.error("Login Error:", err);
       setError(err.response?.data?.error || "Invalid Credentials. Use your full email!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +56,11 @@ const Login = () => {
         <h2 className="text-white text-4xl font-serif mb-2 italic tracking-tight">Login</h2>
         <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">Student Management System</p>
         
-        {error && <p className="text-red-500 text-[10px] mb-4 bg-red-500/10 p-2 rounded border border-red-500 uppercase font-bold">⚠️ {error}</p>}
+        {error && (
+          <p className="text-red-500 text-[10px] mb-4 bg-red-500/10 p-2 rounded border border-red-500 uppercase font-bold">
+            ⚠️ {error}
+          </p>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="text-left">
@@ -66,8 +89,12 @@ const Login = () => {
             />
           </div>
 
-          <button type="submit" className="w-full bg-[#273c75] text-white py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-[#1e90ff] transition-all">
-            Log In
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-[#273c75] text-white py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-[#1e90ff] transition-all disabled:bg-gray-700"
+          >
+            {loading ? "Authenticating..." : "Log In"}
           </button>
         </form>
         
