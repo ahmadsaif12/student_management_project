@@ -153,12 +153,21 @@ class ProfileAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-# --- STAFF MANAGEMENT ---
-class StaffListAPIView(generics.ListCreateAPIView):
+
+class StaffListAPIView(generics.ListAPIView): 
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = StaffSerializer
-    queryset = Staffs.objects.all()
+    
+    def get(self, request):
+        # This gets the Staff profiles and links back to the CustomUser (admin)
+        staff_members = Staffs.objects.select_related('admin').all()
+        data = [
+            {
+                "id": s.admin.id, # Use the User ID for foreign keys
+                "full_name": s.admin.get_full_name() or s.admin.username,
+                "email": s.admin.email
+            } for s in staff_members
+        ]
+        return Response(data)
 
 class StaffDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
