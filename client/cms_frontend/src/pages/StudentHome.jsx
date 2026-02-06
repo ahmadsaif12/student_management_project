@@ -56,6 +56,7 @@ const StudentHome = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
+      {/* SIDEBAR */}
       <aside className="w-64 bg-[#1e293b] fixed h-full text-slate-300 shadow-2xl z-20">
         <div className="p-6 border-b border-slate-700 flex items-center gap-3">
            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
@@ -80,14 +81,13 @@ const StudentHome = () => {
           <SidebarItem icon="fas fa-grid-2" label="Dashboard" active={true} onClick={() => navigate('/student-home')} />
           <SidebarItem icon="fas fa-calendar-check" label="My Attendance" onClick={() => navigate('/view-attendance')} />
           <SidebarItem icon="fas fa-book-open" label="My Results" onClick={() => navigate('/my-results')} />
-          {/* FIXED: Added onClick to Leave Application */}
           <SidebarItem icon="fas fa-file-signature" label="Leave Application" onClick={() => navigate('/apply-leave')} />
-          {/* ADDED: Feedback link */}
           <SidebarItem icon="fas fa-comment-dots" label="Feedback" onClick={() => navigate('/student-feedback')} />
         </nav>
       </aside>
 
-      <main className="ml-64 flex-1 flex flex-col">
+      {/* MAIN CONTENT */}
+      <main className="ml-64 flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-8 sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <i className="fas fa-outdent text-slate-400 cursor-pointer hover:text-blue-600 transition-colors"></i>
@@ -106,7 +106,7 @@ const StudentHome = () => {
             </button>
 
             {showSettings && (
-              <div className="absolute right-0 mt-3 w-52 bg-white border border-slate-200 shadow-2xl rounded-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-3 w-52 bg-white border border-slate-200 shadow-2xl rounded-2xl py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                 <button 
                   onClick={() => navigate('/profile')}
                   className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-3"
@@ -131,19 +131,20 @@ const StudentHome = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <HomeCard title="Total Lectures" count={overview.total} color="bg-indigo-600" icon="fas fa-layer-group" onMoreInfo={() => navigate('/view-attendance')} />
-            <HomeCard title="Present Count" count={overview.present} color="bg-emerald-500" icon="fas fa-user-check" onMoreInfo={() => navigate('/view-attendance')} />
-            <HomeCard title="Absent Count" count={overview.absent} color="bg-rose-500" icon="fas fa-user-times" onMoreInfo={() => navigate('/view-attendance')} />
-            <HomeCard title="Avg Percentage" count={`${overview.percent}%`} color="bg-amber-500" icon="fas fa-chart-line" onMoreInfo={() => navigate('/view-attendance')} />
+            <HomeCard title="Total Lectures" count={overview.total || 0} color="bg-indigo-600" icon="fas fa-layer-group" onMoreInfo={() => navigate('/view-attendance')} />
+            <HomeCard title="Present Count" count={overview.present || 0} color="bg-emerald-500" icon="fas fa-user-check" onMoreInfo={() => navigate('/view-attendance')} />
+            <HomeCard title="Absent Count" count={overview.absent || 0} color="bg-rose-500" icon="fas fa-user-times" onMoreInfo={() => navigate('/view-attendance')} />
+            <HomeCard title="Avg Percentage" count={`${overview.percent || 0}%`} color="bg-amber-500" icon="fas fa-chart-line" onMoreInfo={() => navigate('/view-attendance')} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 lg:col-span-1">
+            {/* PIE CHART CONTAINER */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 lg:col-span-1 min-w-0">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Attendance Ratio</h3>
                 <i className="fas fa-chart-pie text-slate-300"></i>
               </div>
-              <div className="h-72">
+              <div className="h-72 w-full relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie 
@@ -155,28 +156,35 @@ const StudentHome = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend iconType="circle" />
+                    <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                    <Legend iconType="circle" verticalAlign="bottom" />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 lg:col-span-2">
+            {/* BAR CHART CONTAINER */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 lg:col-span-2 min-w-0">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Subject Performance</h3>
                 <i className="fas fa-chart-bar text-slate-300"></i>
               </div>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="subject" tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
-                    <YAxis hide />
-                    <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
-                    <Bar dataKey="percent" fill="#6366f1" radius={[8, 8, 8, 8]} barSize={40} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="h-72 w-full relative">
+                {breakdown.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={breakdown}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="subject" tick={{fontSize: 10, fontWeight: 700}} axisLine={false} tickLine={false} />
+                      <YAxis hide domain={[0, 100]} />
+                      <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
+                      <Bar dataKey="percent" fill="#6366f1" radius={[8, 8, 8, 8]} barSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+                    No Data Available
+                  </div>
+                )}
               </div>
             </div>
           </div>

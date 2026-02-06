@@ -9,7 +9,10 @@ import {
 import { 
   getCourses, 
   getSubjects, 
-  getSessions 
+  getSessions,
+  deleteCourse,
+  deleteSubject,
+  deleteSession
 } from '../api/curriculumService';
 import { Pie, Doughnut, Bar } from 'react-chartjs-2';
 import { 
@@ -36,36 +39,66 @@ const AdminDashboard = () => {
   const [viewMode, setViewMode] = useState('dashboard'); 
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [profileData, courseData, subjectData, staffData, studentData, sessionData] = await Promise.all([
-          getUserProfile(),
-          getCourses(),
-          getSubjects(),
-          getStaffList(),
-          getStudents(),
-          getSessions()
-        ]);
-
-        setUserProfile(profileData);
-        setCourses(Array.isArray(courseData) ? courseData : []);
-        setSubjects(Array.isArray(subjectData) ? subjectData : []);
-        setStaff(Array.isArray(staffData) ? staffData : []);
-        setStudents(Array.isArray(studentData) ? studentData : []);
-        setSessions(Array.isArray(sessionData) ? sessionData : []);
-      } catch (err) {
-        console.error("Dashboard Load Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [profileData, courseData, subjectData, staffData, studentData, sessionData] = await Promise.all([
+        getUserProfile(),
+        getCourses(),
+        getSubjects(),
+        getStaffList(),
+        getStudents(),
+        getSessions()
+      ]);
+
+      setUserProfile(profileData);
+      setCourses(Array.isArray(courseData) ? courseData : []);
+      setSubjects(Array.isArray(subjectData) ? subjectData : []);
+      setStaff(Array.isArray(staffData) ? staffData : []);
+      setStudents(Array.isArray(studentData) ? studentData : []);
+      setSessions(Array.isArray(sessionData) ? sessionData : []);
+    } catch (err) {
+      console.error("Dashboard Load Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logoutUser();
     localStorage.clear();
     navigate('/login');
+  };
+
+  /**
+   * GLOBAL DELETE HANDLER
+   * This handles the deletion and UI state update for all lists
+   */
+  const handleGlobalDelete = async (id, name, mode) => {
+    const confirmText = `DANGER: Permanently delete "${name}"?\nThis action cannot be undone.`;
+    if (!window.confirm(confirmText)) return;
+
+    try {
+      if (mode === 'course_list') {
+        await deleteCourse(id);
+        setCourses(prev => prev.filter(item => item.id !== id));
+      } else if (mode === 'subject_list') {
+        await deleteSubject(id);
+        setSubjects(prev => prev.filter(item => item.id !== id));
+      } else if (mode === 'session_list') {
+        await deleteSession(id);
+        setSessions(prev => prev.filter(item => item.id !== id));
+      }
+      // Note: If you have staff/student delete functions in authService, add them here too.
+      
+      console.log(`Successfully deleted ${name} from ${mode}`);
+    } catch (err) {
+      console.error("Delete Error:", err);
+      alert(`Could not delete record: ${err.message}`);
+    }
   };
 
   const chartOptions = {
@@ -92,7 +125,7 @@ const AdminDashboard = () => {
            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
               <i className="fas fa-shield-alt text-white"></i>
            </div>
-           <span className="text-white font-black text-lg uppercase tracking-tighter">Core <span className="text-indigo-500">Cms</span></span>
+           <span className="text-white font-black text-lg uppercase tracking-tighter">College Management <span className="text-indigo-500">System</span></span>
         </div>
         
         <nav className="py-6 px-4 space-y-1">
@@ -186,6 +219,7 @@ const AdminDashboard = () => {
               onAdd={() => navigate(`/add-${viewMode.replace('_list', '')}`)}
               mode={viewMode}
               navigate={navigate}
+              onDelete={handleGlobalDelete}
             />
           )}
         </div>
@@ -224,19 +258,26 @@ const ChartCard = ({ title, children }) => (
   </div>
 );
 
-const DataList = ({ title, data, onBack, onAdd, mode, navigate }) => (
+const DataList = ({ title, data, onBack, onAdd, mode, navigate, onDelete }) => (
   <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
     <div className="p-8 border-b flex justify-between items-center bg-slate-50/50">
       <div>
         <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{title} LIST</h3>
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total: {data.length}</p>
+        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total Active: {data.length}</p>
       </div>
       <div className="flex gap-3">
+        {/* Navigation to Advanced Manager */}
+        <button 
+           onClick={() => navigate(`/manage-${mode.replace('_list', '')}`)} 
+           className="bg-slate-800 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all shadow-lg"
+        >
+          <i className="fas fa-tasks"></i> Advanced Settings
+        </button>
         <button onClick={onAdd} className="bg-emerald-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-600 transition-all shadow-lg">
-          <i className="fas fa-plus"></i> Add {title}
+          <i className="fas fa-plus"></i> Add New
         </button>
         <button onClick={onBack} className="bg-indigo-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-          <i className="fas fa-arrow-left"></i> Dashboard
+          <i className="fas fa-arrow-left"></i> Home
         </button>
       </div>
     </div>
@@ -244,30 +285,37 @@ const DataList = ({ title, data, onBack, onAdd, mode, navigate }) => (
       <table className="w-full text-left">
         <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
           <tr>
-            <th className="px-10 py-6">Record Name</th>
-            <th className="px-10 py-6">Identity/Email</th>
+            <th className="px-10 py-6">Identity</th>
+            <th className="px-10 py-6">Reference Detail</th>
             <th className="px-10 py-6 text-center">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {data.length > 0 ? data.map((item, idx) => {
+            // Complex naming logic based on object type
             let name = item.admin ? `${item.admin.first_name} ${item.admin.last_name}` : 
                        (item.first_name ? `${item.first_name} ${item.last_name}` : 
                        (item.session_start_year ? `${item.session_start_year} - ${item.session_end_year}` : 
-                       (item.course_name || item.subject_name || "Record")));
+                       (item.course_name || item.subject_name || "Record Item")));
 
-            const detail = item.email || (item.course_name ? `Dept: ${item.course_name}` : `ID: #${item.id}`);
+            const detail = item.email || (item.course_name ? `Dept: ${item.course_name}` : `UID: #${item.id}`);
 
             return (
-              <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+              <tr key={item.id || idx} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="px-10 py-6 font-black text-slate-700 capitalize group-hover:text-indigo-600">{name}</td>
-                <td className="px-10 py-6 text-sm text-slate-500 font-medium">{detail}</td>
+                <td className="px-10 py-6 text-sm text-slate-500 font-medium font-mono">{detail}</td>
                 <td className="px-10 py-6">
                   <div className="flex justify-center gap-2">
-                    <button onClick={() => navigate(`/edit-${mode.split('_')[0]}/${item.id}`)} className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+                    <button 
+                      onClick={() => navigate(`/edit-${mode.split('_')[0]}/${item.id}`)} 
+                      className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                    >
                       <i className="fas fa-edit text-[10px]"></i>
                     </button>
-                    <button className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                    <button 
+                      onClick={() => onDelete(item.id, name, mode)}
+                      className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                    >
                       <i className="fas fa-trash-alt text-[10px]"></i>
                     </button>
                   </div>
@@ -275,7 +323,7 @@ const DataList = ({ title, data, onBack, onAdd, mode, navigate }) => (
               </tr>
             );
           }) : (
-            <tr><td colSpan="3" className="p-20 text-center text-slate-300 font-black uppercase italic">No Records Found</td></tr>
+            <tr><td colSpan="3" className="p-24 text-center text-slate-300 font-black uppercase italic tracking-widest">Database Sync: No Records Found</td></tr>
           )}
         </tbody>
       </table>

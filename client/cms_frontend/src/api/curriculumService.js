@@ -1,8 +1,5 @@
 const API_URL = 'http://localhost:8000/api/curriculum';
 
-/**
- * Helper to get fresh headers for every request.
- */
 const getHeaders = () => {
   const token = localStorage.getItem('access_token');
   return {
@@ -12,27 +9,10 @@ const getHeaders = () => {
 };
 
 // --- COURSE OPERATIONS ---
-
 export const getCourses = async () => {
-  try {
-    const response = await fetch(`${API_URL}/courses/`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-    
-    if (response.status === 403 || response.status === 401) {
-      throw new Error("Your session has expired. Please log out and log in again.");
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to fetch courses');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("getCourses Error:", error);
-    throw error;
-  }
+  const response = await fetch(`${API_URL}/courses/`, { headers: getHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch courses');
+  return await response.json();
 };
 
 export const addCourse = async (courseName) => {
@@ -41,14 +21,7 @@ export const addCourse = async (courseName) => {
     headers: getHeaders(),
     body: JSON.stringify({ course_name: courseName }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    const errorMsg = typeof errorData === 'object' 
-      ? Object.values(errorData).flat().join(', ') 
-      : 'Failed to add course';
-    throw new Error(errorMsg);
-  }
+  if (!response.ok) throw new Error('Failed to add course');
   return await response.json();
 };
 
@@ -57,17 +30,18 @@ export const deleteCourse = async (courseId) => {
     method: 'DELETE',
     headers: getHeaders(),
   });
-  if (!response.ok) throw new Error('Failed to delete course');
+  // FIX: Django returns 204 for successful deletes. We check response.ok 
+  // and DON'T try to parse JSON because a 204 body is empty.
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Delete failed');
+  }
   return true;
 };
 
 // --- SUBJECT OPERATIONS ---
-
 export const getSubjects = async () => {
-  const response = await fetch(`${API_URL}/subjects/`, {
-    method: 'GET',
-    headers: getHeaders(),
-  });
+  const response = await fetch(`${API_URL}/subjects/`, { headers: getHeaders() });
   if (!response.ok) throw new Error('Failed to fetch subjects');
   return await response.json();
 };
@@ -78,18 +52,7 @@ export const addSubject = async (subjectData) => {
     headers: getHeaders(),
     body: JSON.stringify(subjectData),
   });
-
-  const contentType = response.headers.get("content-type");
-  if (!response.ok) {
-    if (contentType && contentType.indexOf("application/json") !== -1) {
-      const errorData = await response.json();
-      throw new Error(Object.values(errorData).flat().join(', '));
-    } else {
-      const text = await response.text();
-      console.error("Server returned HTML instead of JSON:", text);
-      throw new Error(`Server Error: ${response.status}. Check backend logs.`);
-    }
-  }
+  if (!response.ok) throw new Error('Failed to add subject');
   return await response.json();
 };
 
@@ -103,12 +66,8 @@ export const deleteSubject = async (subjectId) => {
 };
 
 // --- SESSION OPERATIONS ---
-
 export const getSessions = async () => {
-  const response = await fetch(`${API_URL}/sessions/`, {
-    method: 'GET',
-    headers: getHeaders(),
-  });
+  const response = await fetch(`${API_URL}/sessions/`, { headers: getHeaders() });
   if (!response.ok) throw new Error('Failed to fetch sessions');
   return await response.json();
 };
@@ -119,14 +78,7 @@ export const addSession = async (sessionData) => {
     headers: getHeaders(),
     body: JSON.stringify(sessionData),
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    const errorMsg = typeof errorData === 'object' 
-      ? Object.values(errorData).flat().join(', ') 
-      : 'Failed to add session';
-    throw new Error(errorMsg);
-  }
+  if (!response.ok) throw new Error('Failed to add session');
   return await response.json();
 };
 
@@ -139,15 +91,9 @@ export const deleteSession = async (sessionId) => {
   return true;
 };
 
-// --- BUNDLED EXPORT ---
+// --- BUNDLED EXPORT (Satisfies ManageSession.jsx) ---
 export const curriculumService = {
-  getCourses,
-  addCourse,
-  deleteCourse,
-  getSubjects,
-  addSubject,
-  deleteSubject,
-  getSessions,
-  addSession,
-  deleteSession 
+  getCourses, addCourse, deleteCourse,
+  getSubjects, addSubject, deleteSubject,
+  getSessions, addSession, deleteSession 
 };
