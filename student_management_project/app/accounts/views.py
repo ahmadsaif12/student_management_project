@@ -7,8 +7,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import CustomUser, Students, Staffs, AdminHOD
-from .serializers import UserSerializer, StudentSerializer, StaffSerializer, AdminHODSerializer
+from .models import *
+from .serializers import *
+from app.core.models import SessionYearModel
+from app.curriculum.models import Subjects
+from app.attendance.models import Attendance
+from app.operations.models import LeaveReportStaff
 
 # --- REGISTRATION ---
 @method_decorator(csrf_exempt, name='dispatch')
@@ -99,14 +103,45 @@ class LoginAPIView(APIView):
         return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 # --- PROFILE & DASHBOARD ---
+
 class ProfileAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
         try:
-            # ADMIN DASHBOARD
-            if user.user_type == '1':
+            # --- STAFF DASHBOARD ---
+            if user.user_type == '2':
+                staff_profile = Staffs.objects.get(admin=user)
+                
+                # 1. Count Subjects assigned to this staff
+                subjects_count = Subjects.objects.filter(staff_id=user).count()
+                
+                # 2. Count Unique Students in courses taught by this staff
+                students_count = Students.objects.filter(
+                    course_id__subjects__staff_id=user
+                ).distinct().count()
+
+                # 3. Count Attendance Sessions marked by this staff
+                attendance_count = Attendance.objects.filter(
+                    subject_id__staff_id=user
+                ).count()
+
+                leave_count = LeaveReportStaff.objects.filter(staff_id=staff_profile).count()
+
+                return Response({
+                    "my_profile": StaffSerializer(staff_profile).data,
+                    "cards": {
+                        "students_under_me": students_count,
+                        "total_attendance_taken": attendance_count,
+                        "total_leave_taken": leave_count,
+                        "total_subjects": subjects_count
+                    },
+                    "user_type": "2"
+                })
+
+            # --- ADMIN DASHBOARD ---
+            elif user.user_type == '1':
                 profile = AdminHOD.objects.get(admin=user)
                 return Response({
                     "my_profile": AdminHODSerializer(profile).data,
@@ -115,32 +150,10 @@ class ProfileAPIView(APIView):
                         "total_staffs": Staffs.objects.count(),
                     }
                 })
-            
-            # STAFF DASHBOARD
-            elif user.user_type == '2':
-                try:
-                    profile = Staffs.objects.get(admin=user)
-                    return Response({
-                        "my_profile": StaffSerializer(profile).data,
-                        "cards": {
-                            "students_under_me": 0, # Logic: Students.objects.filter(course_id__subjects__staff_id=profile).distinct().count()
-                            "total_attendance_taken": 0, 
-                            "total_leave_taken": 0,
-                            "total_subjects": 0 # Logic: Subjects.objects.filter(staff_id=profile).count()
-                        },
-                        "user_type": "2"
-                    })
-                except Staffs.DoesNotExist:
-                    return Response({"error": "Staff profile missing"}, status=404)
-
-            # STUDENT DASHBOARD
-            elif user.user_type == '3':
-                profile = Students.objects.get(admin=user)
-                return Response(StudentSerializer(profile).data)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 # --- STAFF MANAGEMENT ---
 class StaffListAPIView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -170,3 +183,39 @@ class LogoutAPIView(APIView):
     def post(self, request):
         logout(request)
         return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+
+
+class StaffSubjectListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            staff_profile = Staffs.objects.get(admin=request.user)
+            
+            subjects = Subjects.objects.filter(staff_id=request.user)
+            
+            data = [
+                {
+                    "id": s.id, 
+                    "subject_name": s.subject_name
+                } for s in subjects
+            ]
+            return Response(data, status=status.HTTP_200_OK)
+            
+        except Staffs.DoesNotExist:
+            return Response({"error": "Staff record not found for this user."}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+        
+class SessionYearListAPIView(APIView):
+    """Returns all available academic sessions."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        sessions = SessionYearModel.objects.all()
+        data = [{
+            "id": s.id, 
+            "session_start_year": s.session_start_year, 
+            "session_end_year": s.session_end_year
+        } for s in sessions]
+        return Response(data)
