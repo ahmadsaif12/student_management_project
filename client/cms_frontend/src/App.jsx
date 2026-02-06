@@ -31,10 +31,11 @@ import ManageStaff from './pages/ManageStaff';
 // --- ATTENDANCE, LEAVES & COMMUNICATIONS ---
 import ViewAttendance from './pages/ViewAttendance';
 import TakeAttendance from './pages/TakeAttendance';
-import AdminLeaveManagement from './pages/AdminLeaveManagement'; 
 import AdminStudentLeave from './pages/AdminStudentLeave';     
+import AdminStaffLeave from './pages/AdminStaffLeave'; 
 import AdminFeedback from './pages/AdminFeedback'; 
 import StudentLeave from './pages/StudentLeave'; 
+import StaffLeave from './pages/StaffLeave'; 
 import FeedbackPanel from './pages/FeedbackPanel';
 
 // --- RESULTS ---
@@ -90,8 +91,10 @@ function App() {
         <Route path="/manage-student" element={<ProtectedRoute allowedRoles={['1']}><ManageStudent/></ProtectedRoute>} />
         <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={['1']}><ManageStaff/></ProtectedRoute>} />
         
-        <Route path="/manage-staff-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminLeaveManagement /></ProtectedRoute>} />
+        {/* UPDATED ADMIN LEAVE ROUTES */}
+        <Route path="/manage-staff-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminStaffLeave /></ProtectedRoute>} />
         <Route path="/manage-student-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminStudentLeave /></ProtectedRoute>} />
+        
         <Route path="/feedback" element={<ProtectedRoute allowedRoles={['1']}><AdminFeedback /></ProtectedRoute>} />
 
         {/* --- STAFF ONLY (Role 2) --- */}
@@ -100,14 +103,14 @@ function App() {
         <Route path="/staff-view-attendance" element={<ProtectedRoute allowedRoles={['2']}><ViewAttendance /></ProtectedRoute>} />
         <Route path="/staff-add-result" element={<ProtectedRoute allowedRoles={['2']}><AddResult /></ProtectedRoute>} />
         <Route path="/staff-view-results" element={<ProtectedRoute allowedRoles={['2']}><ViewResult /></ProtectedRoute>} />
-        <Route path="/staff-leave" element={<ProtectedRoute allowedRoles={['2']}><StudentLeave type="staff" /></ProtectedRoute>} />
+        <Route path="/staff-leave" element={<ProtectedRoute allowedRoles={['2']}><StaffLeave /></ProtectedRoute>} /> 
         <Route path="/staff-feedback" element={<ProtectedRoute allowedRoles={['2']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- STUDENT ONLY (Role 3) --- */}
         <Route path="/student-home" element={<ProtectedRoute allowedRoles={['3']}><StudentHome /></ProtectedRoute>} />
         <Route path="/student-view-attendance" element={<ProtectedRoute allowedRoles={['3']}><ViewAttendance /></ProtectedRoute>} />
         <Route path="/student-view-results" element={<ProtectedRoute allowedRoles={['3']}><ViewResult /></ProtectedRoute>} />
-        <Route path="/apply-leave" element={<ProtectedRoute allowedRoles={['3']}><StudentLeave type="student" /></ProtectedRoute>} />
+        <Route path="/apply-leave" element={<ProtectedRoute allowedRoles={['3']}><StudentLeave /></ProtectedRoute>} />
         <Route path="/student-feedback" element={<ProtectedRoute allowedRoles={['3']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- SHARED PROTECTED ROUTES --- */}

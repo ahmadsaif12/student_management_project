@@ -10,7 +10,8 @@ from .views import (
     FeedbackAPIView,
     AdminFeedbackView,
     StudentResultAPIView,
-    ContactCreateView
+    ContactCreateView,
+    AdminStaffLeaveView
 )
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     
     # New: Admin view to see ALL student leave requests
     path('admin/student-leaves/', AdminStudentLeaveView.as_view(), name='admin_student_leaves'),
+     path('admin/staff-leaves/', AdminStaffLeaveView.as_view(), name='admin_staff_leaves'),
     
     # Admin approval/rejection logic
     path('leave/action/', AdminLeaveActionAPIView.as_view(), name='api_leave_action'),

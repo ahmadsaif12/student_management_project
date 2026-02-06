@@ -239,18 +239,28 @@ class ContactCreateView(CreateAPIView):
     serializer_class = ContactSerializer
     permission_classes = [permissions.AllowAny]
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class StudentLeaveAPIView(APIView):
     """Student apply for leave (POST) and view their own history (GET)."""
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_student_profile(self, user):
+        """
+        Directly queries the Student model to avoid 'hasattr' failures.
+        """
+        from app.accounts.models import Students
+        # Replace 'admin' with whatever your ForeignKey field to CustomUser is named
+        return Students.objects.filter(admin=user).first()
+
     def get(self, request):
-        if not hasattr(request.user, 'students'):
-            return Response({"error": "Student profile not found."}, status=403)
-        # Fetching leave records for the logged-in student
-        leaves = LeaveReportStudent.objects.filter(student_id=request.user.students).order_by('-created_at')
-        # Map the data to JSON format
+        student_profile = self.get_student_profile(request.user)
+        
+        if not student_profile:
+            # Check if this is actually a staff member trying to access student leave
+            return Response({"error": "Student profile not found for this user."}, status=403)
+
+        leaves = LeaveReportStudent.objects.filter(student_id=student_profile).order_by('-created_at')
+        
         data = [
             {
                 "id": l.id,
@@ -263,14 +273,22 @@ class StudentLeaveAPIView(APIView):
         return Response(data)
 
     def post(self, request):
-        if not hasattr(request.user, 'students'):
-            return Response({"error": "Student profile not found."}, status=403)
+        student_profile = self.get_student_profile(request.user)
+        
+        if not student_profile:
+            return Response({"error": "You must be a student to apply for leave."}, status=403)
+
         try:
-            # Creating a new leave record with status 0 (Pending)
+            leave_date = request.data.get('leave_date')
+            leave_message = request.data.get('leave_message')
+
+            if not leave_date or not leave_message:
+                return Response({"error": "Missing date or message."}, status=400)
+
             LeaveReportStudent.objects.create(
-                student_id=request.user.students,
-                leave_date=request.data.get('leave_date'),
-                leave_message=request.data.get('leave_message'),
+                student_id=student_profile,
+                leave_date=leave_date,
+                leave_message=leave_message,
                 leave_status=0 
             )
             return Response({"message": "Leave applied successfully"}, status=201)
@@ -310,7 +328,27 @@ class AdminStudentLeaveView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+class AdminStaffLeaveView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        # Admin check
+        if request.user.user_type != '1':
+            return Response({"detail": "Forbidden"}, status=403)
+            
+        leaves = LeaveReportStaff.objects.select_related('staff_id__admin').all().order_by('-created_at')
+        
+        data = []
+        for l in leaves:
+            data.append({
+                "id": l.id,
+                "staff_name": l.staff_id.admin.get_full_name() if l.staff_id else "Unknown Staff",
+                "leave_date": str(l.leave_date),
+                "leave_message": l.leave_message,
+                "leave_status": int(l.leave_status),
+                "created_at": l.created_at.strftime("%Y-%m-%d")
+            })
+        return Response(data)
 
 class AdminLeaveActionAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]

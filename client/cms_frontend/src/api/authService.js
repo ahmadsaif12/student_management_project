@@ -121,10 +121,8 @@ export const deleteStaff = async (staffId) => {
 
 /**
  * --- FEEDBACK MANAGEMENT ---
- * Handles student submission and admin responses.
  */
 
-// For Students/Staff to submit their own feedback
 export const submitFeedback = async (feedbackText) => {
   try {
     const response = await axiosInstance.post('operations/feedback/', {
@@ -136,7 +134,6 @@ export const submitFeedback = async (feedbackText) => {
   }
 };
 
-// For Students/Staff to see their own history
 export const getFeedbackHistory = async () => {
   try {
     const response = await axiosInstance.get('operations/feedback/');
@@ -146,7 +143,6 @@ export const getFeedbackHistory = async () => {
   }
 };
 
-// ADMIN ONLY: To see all feedback from everyone
 export const getAdminFeedback = async () => {
   try {
     const response = await axiosInstance.get('operations/admin-feedback/');
@@ -156,18 +152,21 @@ export const getAdminFeedback = async () => {
   }
 };
 
-// ADMIN ONLY: To reply to a specific feedback
-
 export const replyToFeedback = async (feedbackId, replyMessage, type) => {
-  return await axiosInstance.post('operations/admin-feedback/', {
-    feedback_id: feedbackId,
-    reply: replyMessage,
-    type: type // 'Student' or 'Staff'
-  });
+  try {
+    const response = await axiosInstance.post('operations/admin-feedback/', {
+      feedback_id: feedbackId,
+      reply: replyMessage,
+      type: type // 'Student' or 'Staff'
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Failed to reply to feedback" };
+  }
 };
 
 /**
- * --- LEAVE MANAGEMENT ---
+ * --- LEAVE MANAGEMENT (STUDENT) ---
  */
 
 export const applyStudentLeave = async (leaveData) => {
@@ -188,16 +187,50 @@ export const getStudentLeaveHistory = async () => {
   }
 };
 
+/**
+ * --- LEAVE MANAGEMENT (STAFF) ---
+ */
+
+export const applyStaffLeave = async (leaveData) => {
+  try {
+    const response = await axiosInstance.post('operations/leave/staff/', leaveData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Staff leave submission failed" };
+  }
+};
+
+export const getStaffLeaveHistory = async () => {
+  try {
+    const response = await axiosInstance.get('operations/leave/staff/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Failed to load staff history" };
+  }
+};
+
+/**
+ * --- ADMIN LEAVE ACTIONS ---
+ */
+
 export const getAdminStudentLeaves = async () => {
   try {
     const response = await axiosInstance.get('operations/admin/student-leaves/');
     return response.data;
   } catch (error) {
-    throw error.response?.data || { error: "Failed to fetch admin leave list" };
+    throw error.response?.data || { error: "Failed to fetch student leave list" };
   }
 };
 
-// --- ADMIN LEAVE ACTIONS ---
+export const getAdminStaffLeaves = async () => {
+  try {
+    const response = await axiosInstance.get('operations/admin/staff-leaves/');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: "Failed to fetch staff leave list" };
+  }
+};
+
 export const updateLeaveStatus = async (leaveId, type, status) => {
   try {
     const response = await axiosInstance.post('operations/leave/action/', {
