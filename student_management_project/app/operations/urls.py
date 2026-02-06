@@ -35,6 +35,7 @@ urlpatterns = [
 
     # --- ACADEMICS & RESULTS ---
     path('manage-results/', StudentResultAPIView.as_view(), name='api_manage_results'),
+    path('save-result/', StudentResultAPIView.as_view(), name='api_save_result'),
 
     # --- PUBLIC SERVICES ---
     path('contact/send/', ContactCreateView.as_view(), name='api_contact_send'),

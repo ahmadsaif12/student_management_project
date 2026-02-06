@@ -140,30 +140,6 @@ class StudentHomeStats(APIView):
             "last_updated": "300"
         })
 
-class StudentResultAPIView(APIView):
-    """Staff manage marks | Students view their report cards."""
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        if hasattr(request.user, 'students'):
-            results = StudentResult.objects.filter(student_id=request.user.students)
-            return Response(StudentResultSerializer(results, many=True).data)
-        return Response({"error": "Forbidden"}, status=403)
-
-    def post(self, request):
-        if not hasattr(request.user, 'staffs'):
-            return Response({"error": "Staff only"}, status=403)
-        
-        result, created = StudentResult.objects.update_or_create(
-            student_id_id=request.data.get('student_id'),
-            subject_id_id=request.data.get('subject_id'),
-            defaults={
-                'subject_exam_marks': request.data.get('subject_exam_marks'),
-                'subject_assignment_marks': request.data.get('subject_assignment_marks')
-            }
-        )
-        return Response({"message": "Marks saved", "created": created})
-
 
 # --- 4. FEEDBACK & COMMUNICATIONS ---
 
@@ -362,3 +338,75 @@ class AdminLeaveActionAPIView(APIView):
             return Response({"error": "Leave record not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class StudentResultAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        subject_param = request.query_params.get('subject_id')
+        user = request.user
+
+        # --- MODE 1: FETCH STUDENTS FOR GRADING (Used by AddResult.jsx) ---
+        if subject_param:
+            try:
+                if subject_param.isdigit():
+                    subject = Subjects.objects.get(id=int(subject_param))
+                else:
+                    subject = Subjects.objects.get(subject_name__iexact=subject_param)
+                
+                # Fetch students in the course linked to this subject
+                students = Students.objects.filter(course_id=subject.course_id)
+                
+                data = [{
+                    "id": s.id,
+                    "full_name": s.admin.get_full_name() or s.admin.username,
+                    "username": s.admin.username
+                } for s in students]
+                return Response(data)
+            except Subjects.DoesNotExist:
+                return Response({"error": "Subject not found"}, status=404)
+
+        # --- MODE 2: VIEW SAVED RESULTS (Used by ViewResult.jsx) ---
+        else:
+            results = StudentResult.objects.all()
+
+            # Filter logic based on Role
+            # Role '3' is usually Student
+            if hasattr(user, 'students'):
+                results = results.filter(student_id=user.students)
+            # Role '2' is usually Staff
+            elif hasattr(user, 'staffs'):
+                # Show results for subjects taught by this staff member
+                results = results.filter(subject_id__staff_id=user)
+
+            # Format data to match the ViewResult.jsx card requirements
+            data = [{
+                "id": r.id,
+                "subject_name": r.subject_id.subject_name,
+                "student_name": r.student_id.admin.get_full_name() or r.student_id.admin.username,
+                "subject_exam_marks": r.subject_exam_marks,
+                "subject_assignment_marks": r.subject_assignment_marks,
+            } for r in results]
+            
+            return Response(data)
+
+    def post(self, request):
+        # ... (Your existing POST logic for saving marks) ...
+        subject_id = request.data.get('subject_id')
+        marks_list = request.data.get('marks_list')
+        try:
+            if str(subject_id).isdigit():
+                subj = Subjects.objects.get(id=int(subject_id))
+            else:
+                subj = Subjects.objects.get(subject_name__iexact=subject_id)
+
+            for std_id, marks in marks_list.items():
+                StudentResult.objects.update_or_create(
+                    student_id_id=std_id,
+                    subject_id=subj,
+                    defaults={'subject_exam_marks': float(marks or 0)}
+                )
+            return Response({"message": "Saved"}, status=201)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

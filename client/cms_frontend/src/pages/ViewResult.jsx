@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import for redirection
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
 const ViewResult = () => {
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userRole = localStorage.getItem('user_role');
+  const userRole = localStorage.getItem('user_role'); // '2' for Staff, '3' for Student
 
   useEffect(() => {
     const fetchResults = async () => {
       try {
+        // GET request with no params triggers "Mode 2" in our backend
         const res = await axiosInstance.get('operations/manage-results/');
         setResults(res.data);
       } catch (err) {
@@ -22,15 +23,10 @@ const ViewResult = () => {
     fetchResults();
   }, []);
 
-  // Function to handle redirection based on role
   const handleBackToDashboard = () => {
-    if (userRole === '2') {
-      navigate('/staff-home');
-    } else if (userRole === '3') {
-      navigate('/student-home');
-    } else {
-      navigate('/');
-    }
+    if (userRole === '2') navigate('/staff-home');
+    else if (userRole === '3') navigate('/student-home');
+    else navigate('/');
   };
 
   if (loading) return (
@@ -42,14 +38,12 @@ const ViewResult = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] p-4 lg:p-10 lg:ml-72">
       <div className="max-w-5xl mx-auto">
-        
-        {/* Navigation / Header Section */}
         <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-800 uppercase tracking-tight">
               {userRole === '2' ? 'Submitted Results' : 'Academic Report Card'}
             </h1>
-            <p className="text-slate-500 font-medium">Viewing latest academic records</p>
+            <p className="text-slate-500 font-medium tracking-tight">Viewing latest academic records</p>
           </div>
 
           <button 
@@ -69,16 +63,19 @@ const ViewResult = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {res.subject_id_name || res.subject_name || "Course Module"}
+                      {res.subject_name}
                     </h3>
                   </div>
-                  <p className="text-xl font-black text-slate-800 uppercase">
-                    {userRole === '2' ? `Student: ${res.student_name || 'N/A'}` : 'Examination Score'}
+                  <p className="text-xl font-black text-slate-800 uppercase leading-tight">
+                    {userRole === '2' ? `Student: ${res.student_name}` : 'Examination Score'}
                   </p>
+                  {userRole === '2' && (
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase">Record ID: #{res.id}</span>
+                  )}
                 </div>
 
                 <div className="text-right">
-                  <div className="text-4xl font-black text-indigo-600">
+                  <div className="text-4xl font-black text-indigo-600 tabular-nums">
                     {res.subject_exam_marks}
                     <span className="text-sm text-slate-300 ml-1">/100</span>
                   </div>
@@ -99,12 +96,6 @@ const ViewResult = () => {
              <p className="text-slate-400 font-black uppercase text-xs tracking-widest">
                No academic records found.
              </p>
-             <button 
-                onClick={handleBackToDashboard}
-                className="mt-6 text-indigo-600 font-black uppercase text-[10px] underline underline-offset-4"
-             >
-                Return Home
-             </button>
           </div>
         )}
       </div>

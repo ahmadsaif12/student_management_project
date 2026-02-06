@@ -4,6 +4,7 @@ import axiosInstance from '../api/axiosInstance';
 
 const ViewAttendance = () => {
   const navigate = useNavigate();
+  // Retrieve role as string to match logic
   const userRole = String(localStorage.getItem('user_role')); 
 
   // --- Form States ---
@@ -12,7 +13,7 @@ const ViewAttendance = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedSession, setSelectedSession] = useState('');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState('overview'); // 'overview' (Stats) or 'history' (Daily)
+  const [viewMode, setViewMode] = useState('overview');
 
   // --- Data & UI States ---
   const [attendanceData, setAttendanceData] = useState([]);
@@ -21,7 +22,21 @@ const ViewAttendance = () => {
   const [message, setMessage] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  // --- Initial Metadata Load ---
+  // Determine portal title based on role
+  const getPortalTitle = () => {
+    if (userRole === '1') return 'Admin';
+    if (userRole === '2') return 'Staff';
+    if (userRole === '3') return 'Student';
+    return 'Portal';
+  };
+
+  // Determine correct Home path
+  const getHomePath = () => {
+    if (userRole === '1') return '/admin-home';
+    if (userRole === '2') return '/staff-home';
+    return '/student-home';
+  };
+
   useEffect(() => {
     const fetchMetadata = async () => {
       if (userRole === '3') {
@@ -66,7 +81,6 @@ const ViewAttendance = () => {
     }
   };
 
-  // --- Fetch Logic for Admin/Staff ---
   const handleFetchAttendance = async (e) => {
     if (e) e.preventDefault();
     if (!selectedSubject || !selectedSession) {
@@ -97,13 +111,12 @@ const ViewAttendance = () => {
     }
   };
 
-  // Helper Calculations for "How Many"
   const totalPresenceMarks = attendanceData.reduce((acc, row) => acc + (row.present || 0), 0);
   const totalClassesConducted = attendanceData.length > 0 ? (attendanceData[0].total || 0) : 0;
 
   return (
     <div className="flex min-h-screen bg-[#f4f6f9]">
-      {/* Sidebar - JECRC Style */}
+      {/* Sidebar - Dynamically routes back to user's home */}
       <aside className="w-64 bg-[#343a40] fixed h-full text-[#c2c7d0] shadow-xl z-20">
         <div className="p-4 border-b border-gray-700 flex items-center gap-3 bg-[#343a40]">
            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
@@ -112,12 +125,25 @@ const ViewAttendance = () => {
            <span className="text-white font-bold text-lg">JECRC</span>
         </div>
         <nav className="mt-4">
-          <SidebarItem icon="fas fa-home" label="Dashboard" onClick={() => navigate(userRole === '3' ? '/student-home' : '/admin-home')} />
-          <SidebarItem icon="fas fa-calendar-check" label="View Attendance" active={true} />
+          <SidebarItem icon="fas fa-home" label="Dashboard" onClick={() => navigate(getHomePath())} />
+          
+          {userRole === '2' && (
+             <SidebarItem icon="fas fa-calendar-check" label="Take Attendance" onClick={() => navigate('/take-attendance')} />
+          )}
+
+          <SidebarItem icon="fas fa-eye" label="View Attendance" active={true} />
+          
+          {userRole === '2' && (
+            <>
+              <SidebarItem icon="fas fa-plus-circle" label="Add Result" onClick={() => navigate('/staff-add-result')} />
+              <SidebarItem icon="fas fa-envelope" label="Apply Leave" onClick={() => navigate('/staff-leave')} />
+            </>
+          )}
+
           {userRole === '3' && (
             <>
-              <SidebarItem icon="fas fa-poll-h" label="View Result" />
-              <SidebarItem icon="fas fa-envelope" label="Apply for Leave" />
+              <SidebarItem icon="fas fa-poll-h" label="View Result" onClick={() => navigate('/student-view-results')} />
+              <SidebarItem icon="fas fa-envelope" label="Apply Leave" onClick={() => navigate('/apply-leave')} />
             </>
           )}
         </nav>
@@ -125,10 +151,10 @@ const ViewAttendance = () => {
 
       {/* Main Container */}
       <main className="ml-64 flex-1 flex flex-col">
-        {/* Navbar */}
+        {/* Navbar - Correctly shows Staff title */}
         <header className="h-14 bg-white shadow-sm flex justify-between items-center px-6 sticky top-0 z-10">
           <div className="text-sm font-medium text-gray-500 flex items-center gap-2">
-            <i className="fas fa-bars mr-2"></i> Attendance System | {userRole === '3' ? 'Student' : 'Admin'}
+            <i className="fas fa-bars mr-2"></i> Attendance System | {getPortalTitle()}
           </div>
           <div className="relative">
             <button onClick={() => setShowSettings(!showSettings)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full">
@@ -158,7 +184,7 @@ const ViewAttendance = () => {
             )}
           </div>
 
-          {/* Filters - Only for Admin/Staff */}
+          {/* Filters for Admin & Staff */}
           {userRole !== '3' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
               <form onSubmit={handleFetchAttendance} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
@@ -281,7 +307,6 @@ const ViewAttendance = () => {
   );
 };
 
-// Sidebar Helper Component
 const SidebarItem = ({ icon, label, active, onClick }) => (
   <div onClick={onClick} className={`flex items-center gap-3 px-6 py-4 text-sm font-medium cursor-pointer transition-colors ${active ? 'bg-[#007bff] text-white shadow-inner' : 'hover:bg-gray-700 hover:text-white'}`}>
     <i className={`${icon} w-5 text-center`}></i>

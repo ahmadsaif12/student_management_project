@@ -35,7 +35,11 @@ import AdminLeaveManagement from './pages/AdminLeaveManagement';
 import AdminStudentLeave from './pages/AdminStudentLeave';     
 import AdminFeedback from './pages/AdminFeedback'; 
 import StudentLeave from './pages/StudentLeave'; 
-import FeedbackPanel from './pages/FeedbackPanel'; // Shared by Students/Staff
+import FeedbackPanel from './pages/FeedbackPanel';
+
+// --- RESULTS ---
+import AddResult from "./pages/AddResult";
+import ViewResult from "./pages/ViewResult";
 
 // --- PROTECTED ROUTE COMPONENT ---
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -44,7 +48,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!token) return <Navigate to="/login" />;
   
-  // If a specific role is required and user doesn't have it, redirect to their home
   if (allowedRoles && !allowedRoles.includes(role)) {
     const redirects = {
       '1': '/admin-home',
@@ -89,27 +92,25 @@ function App() {
         
         <Route path="/manage-staff-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminLeaveManagement /></ProtectedRoute>} />
         <Route path="/manage-student-leaves" element={<ProtectedRoute allowedRoles={['1']}><AdminStudentLeave /></ProtectedRoute>} />
-        
-        {/* Admin Feedback (The Inbox View) */}
         <Route path="/feedback" element={<ProtectedRoute allowedRoles={['1']}><AdminFeedback /></ProtectedRoute>} />
 
         {/* --- STAFF ONLY (Role 2) --- */}
         <Route path="/staff-home" element={<ProtectedRoute allowedRoles={['2']}><StaffHome /></ProtectedRoute>} />
         <Route path="/take-attendance" element={<ProtectedRoute allowedRoles={['2']}><TakeAttendance /></ProtectedRoute>} />
+        <Route path="/staff-view-attendance" element={<ProtectedRoute allowedRoles={['2']}><ViewAttendance /></ProtectedRoute>} />
+        <Route path="/staff-add-result" element={<ProtectedRoute allowedRoles={['2']}><AddResult /></ProtectedRoute>} />
+        <Route path="/staff-view-results" element={<ProtectedRoute allowedRoles={['2']}><ViewResult /></ProtectedRoute>} />
         <Route path="/staff-leave" element={<ProtectedRoute allowedRoles={['2']}><StudentLeave type="staff" /></ProtectedRoute>} />
-        
-        {/* Staff-specific feedback history */}
         <Route path="/staff-feedback" element={<ProtectedRoute allowedRoles={['2']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- STUDENT ONLY (Role 3) --- */}
         <Route path="/student-home" element={<ProtectedRoute allowedRoles={['3']}><StudentHome /></ProtectedRoute>} />
+        <Route path="/student-view-attendance" element={<ProtectedRoute allowedRoles={['3']}><ViewAttendance /></ProtectedRoute>} />
+        <Route path="/student-view-results" element={<ProtectedRoute allowedRoles={['3']}><ViewResult /></ProtectedRoute>} />
         <Route path="/apply-leave" element={<ProtectedRoute allowedRoles={['3']}><StudentLeave type="student" /></ProtectedRoute>} />
-        
-        {/* Student-specific feedback history */}
         <Route path="/student-feedback" element={<ProtectedRoute allowedRoles={['3']}><FeedbackPanel /></ProtectedRoute>} />
 
         {/* --- SHARED PROTECTED ROUTES --- */}
-        <Route path="/view-attendance" element={<ProtectedRoute><ViewAttendance /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         {/* --- FALLBACK --- */}
