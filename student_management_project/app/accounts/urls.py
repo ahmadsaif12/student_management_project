@@ -1,10 +1,9 @@
-from django.urls import path, include # Added include
+from django.urls import path, include 
 from rest_framework.routers import DefaultRouter
 from .views import (
     LoginAPIView, RegistrationAPIView, LogoutAPIView, 
     ProfileAPIView, StaffListAPIView, StudentViewSet,StaffDetailAPIView,StaffSubjectListAPIView, 
     SessionYearListAPIView
-    # ... your other views
 )
 
 router = DefaultRouter()

@@ -41,7 +41,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # --- MIDDLEWARE ---
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # MUST be at the top
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -116,7 +116,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-# --- STATIC & MEDIA ---
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'

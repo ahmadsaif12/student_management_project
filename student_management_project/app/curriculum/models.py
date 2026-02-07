@@ -9,5 +9,4 @@ class Subjects(BaseModel):
     id = models.AutoField(primary_key=True)
     subject_name = models.CharField(max_length=255)
     course_id = models.ForeignKey(Courses, on_delete=models.CASCADE, default=1)
-    # Reference to user in accounts app
     staff_id = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE)

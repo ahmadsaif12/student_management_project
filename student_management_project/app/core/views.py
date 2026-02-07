@@ -22,15 +22,11 @@ class AdminDashboardStats(APIView):
             staff_count = Staffs.objects.count()
             course_count = Courses.objects.count()
             subject_count = Subjects.objects.count()
-
-            # 2. MIDDLE ROW CHARTS
-            # Pie Chart: Student and Staff Chart
             staff_student_chart = [
                 {"name": "Students", "value": student_count},
                 {"name": "Staffs", "value": staff_count}
             ]
 
-            # Donut Chart: Total Subjects in Each Course
             course_subject_distribution = list(Courses.objects.annotate(
                 value=Count('subjects')
             ).values('course_name', 'value'))

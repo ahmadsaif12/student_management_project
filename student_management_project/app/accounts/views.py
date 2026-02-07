@@ -50,7 +50,6 @@ class RegistrationAPIView(APIView):
                 user_type=user_type
             )
             
-            # Auto-create profile records
             if user_type == "1":
                 AdminHOD.objects.get_or_create(admin=user)
             elif user_type == "2":
@@ -113,16 +112,10 @@ class ProfileAPIView(APIView):
             # --- STAFF DASHBOARD ---
             if user.user_type == '2':
                 staff_profile = Staffs.objects.get(admin=user)
-                
-                # 1. Count Subjects assigned to this staff
                 subjects_count = Subjects.objects.filter(staff_id=user).count()
-                
-                # 2. Count Unique Students in courses taught by this staff
                 students_count = Students.objects.filter(
                     course_id__subjects__staff_id=user
                 ).distinct().count()
-
-                # 3. Count Attendance Sessions marked by this staff
                 attendance_count = Attendance.objects.filter(
                     subject_id__staff_id=user
                 ).count()
@@ -158,11 +151,10 @@ class StaffListAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        # This gets the Staff profiles and links back to the CustomUser (admin)
         staff_members = Staffs.objects.select_related('admin').all()
         data = [
             {
-                "id": s.admin.id, # Use the User ID for foreign keys
+                "id": s.admin.id,
                 "full_name": s.admin.get_full_name() or s.admin.username,
                 "email": s.admin.email
             } for s in staff_members

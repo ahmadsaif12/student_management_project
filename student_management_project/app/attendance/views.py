@@ -5,7 +5,6 @@ from rest_framework.authentication import SessionAuthentication
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 
-# Model Imports
 from app.accounts.models import Students, Staffs
 from app.core.models import SessionYearModel
 from app.curriculum.models import Subjects
@@ -15,8 +14,6 @@ class UnsafeSessionAuthentication(SessionAuthentication):
     """Bypasses CSRF for React development and testing."""
     def enforce_csrf(self, request):
         return 
-
-# --- 1. METADATA & SELECTION FILTERS ---
 
 class StaffSubjectList(APIView):
     """Returns subjects based on user type: Admin (All), Student (Course), Staff (Assigned)."""
@@ -30,8 +27,7 @@ class StaffSubjectList(APIView):
             elif user_type == '3': # Student
                 student = get_object_or_404(Students, admin=request.user)
                 subjects = Subjects.objects.filter(course_id=student.course_id)
-            else: # Staff
-                # Use request.user directly because Subjects links to CustomUser
+            else: 
                 subjects = Subjects.objects.filter(staff_id=request.user)
             
             data = [{"id": s.id, "subject_name": s.subject_name} for s in subjects]
@@ -92,12 +88,6 @@ class SaveAttendanceAPIView(APIView):
             subject_id = request.data.get("subject_id")
             session_id = request.data.get("session_year_id")
             att_date = request.data.get("attendance_date")
-
-            # Debugging: Print to Docker console
-            print(f"Saving attendance for Subject: {subject_id}, Date: {att_date}")
-
-            # 1. Get or Create the Main Attendance Header
-            # We use _id suffix if the field is a ForeignKey in the model
             attendance, _ = Attendance.objects.get_or_create(
                 subject_id_id=subject_id, 
                 attendance_date=att_date, 
@@ -106,7 +96,6 @@ class SaveAttendanceAPIView(APIView):
             
             # 2. Bulk update/create the reports
             for entry in student_data:
-                # IMPORTANT: Ensure entry['id'] matches the admin_id in your Students model
                 student = Students.objects.get(admin_id=entry['id'])
                 AttendanceReport.objects.update_or_create(
                     student_id=student, 
@@ -117,10 +106,9 @@ class SaveAttendanceAPIView(APIView):
             return Response({"message": "Attendance Saved"}, status=status.HTTP_201_CREATED)
             
         except Students.DoesNotExist as e:
-            print(f"Student Search Error: {str(e)}")
             return Response({"error": "One or more student IDs are invalid"}, status=400)
+        
         except Exception as e:
-            print(f"SERVER ERROR: {str(e)}") # This will show in your web-1 terminal
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 # --- 3. SEARCH & STATISTICS (Unified Logic) ---
@@ -135,7 +123,7 @@ class GetAttendanceDataAPIView(APIView):
             session_id = request.data.get("session_year_id")
             att_date = request.data.get("attendance_date")
 
-            if att_date: # Daily View
+            if att_date:
                 attendance = Attendance.objects.filter(
                     subject_id_id=subject_id,
                     session_year_id_id=session_id,
@@ -153,7 +141,7 @@ class GetAttendanceDataAPIView(APIView):
                 } for r in reports]
                 return Response(data)
 
-            else: # Stats View - Lifetime Count
+            else: 
                 subject = get_object_or_404(Subjects, id=subject_id)
                 students = Students.objects.filter(course_id=subject.course_id).select_related('admin')
 

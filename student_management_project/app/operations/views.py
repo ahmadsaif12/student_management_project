@@ -173,7 +173,6 @@ class FeedbackAPIView(APIView):
         
         return Response(data)
 
-# app/operations/views.py
 
 class AdminFeedbackView(APIView):
     # Change from IsAdminUser to IsAuthenticated so the request actually reaches the GET method
@@ -192,25 +191,24 @@ class AdminFeedbackView(APIView):
             {
                 "id": f.id,
                 "user": f.student_id.admin.get_full_name(),
-                "email": f.student_id.admin.email, # Added email for your UI
+                "email": f.student_id.admin.email, 
                 "message": f.feedback,
                 "reply": f.feedback_reply,
-                "type": "Student", # Matches your React filter logic
+                "type": "Student", 
                 "date": f.created_at
             } for f in student_fb
         ] + [
             {
                 "id": f.id,
                 "user": f.staff_id.admin.get_full_name(),
-                "email": f.staff_id.admin.email, # Added email for your UI
+                "email": f.staff_id.admin.email, 
                 "message": f.feedback,
                 "reply": f.feedback_reply,
-                "type": "Staff", # Matches your React filter logic
+                "type": "Staff", 
                 "date": f.created_at
             } for f in staff_fb
         ]
         
-        # Sort by latest date
         data.sort(key=lambda x: x['date'], reverse=True)
         return Response(data)
 
@@ -218,7 +216,6 @@ class AdminFeedbackView(APIView):
         if request.user.user_type != '1':
             return Response({"detail": "Forbidden"}, status=403)
 
-        # IMPORTANT: Your React code sends 'feedback_id', not 'id'
         fb_id = request.data.get('feedback_id') 
         reply = request.data.get('reply')
         user_type = request.data.get('type') # 'Student' or 'Staff'
@@ -332,10 +329,8 @@ class AdminStaffLeaveView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Admin check
         if request.user.user_type != '1':
-            return Response({"detail": "Forbidden"}, status=403)
-            
+            return Response({"detail": "Forbidden"}, status=403)   
         leaves = LeaveReportStaff.objects.select_related('staff_id__admin').all().order_by('-created_at')
         
         data = []
@@ -366,7 +361,6 @@ class AdminLeaveActionAPIView(APIView):
             else:
                 return Response({"error": "Invalid leave type"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Update the status
             leave_record.leave_status = new_status
             leave_record.save()
 
@@ -384,8 +378,6 @@ class StudentResultAPIView(APIView):
     def get(self, request):
         subject_param = request.query_params.get('subject_id')
         user = request.user
-
-        # --- MODE 1: FETCH STUDENTS FOR GRADING (Used by AddResult.jsx) ---
         if subject_param:
             try:
                 if subject_param.isdigit():
@@ -393,7 +385,6 @@ class StudentResultAPIView(APIView):
                 else:
                     subject = Subjects.objects.get(subject_name__iexact=subject_param)
                 
-                # Fetch students in the course linked to this subject
                 students = Students.objects.filter(course_id=subject.course_id)
                 
                 data = [{
@@ -405,20 +396,13 @@ class StudentResultAPIView(APIView):
             except Subjects.DoesNotExist:
                 return Response({"error": "Subject not found"}, status=404)
 
-        # --- MODE 2: VIEW SAVED RESULTS (Used by ViewResult.jsx) ---
         else:
             results = StudentResult.objects.all()
 
-            # Filter logic based on Role
-            # Role '3' is usually Student
             if hasattr(user, 'students'):
                 results = results.filter(student_id=user.students)
-            # Role '2' is usually Staff
             elif hasattr(user, 'staffs'):
-                # Show results for subjects taught by this staff member
                 results = results.filter(subject_id__staff_id=user)
-
-            # Format data to match the ViewResult.jsx card requirements
             data = [{
                 "id": r.id,
                 "subject_name": r.subject_id.subject_name,
@@ -430,7 +414,6 @@ class StudentResultAPIView(APIView):
             return Response(data)
 
     def post(self, request):
-        # ... (Your existing POST logic for saving marks) ...
         subject_id = request.data.get('subject_id')
         marks_list = request.data.get('marks_list')
         try:
