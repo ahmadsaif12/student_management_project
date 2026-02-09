@@ -102,14 +102,13 @@ class LoginAPIView(APIView):
         return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 # --- PROFILE & DASHBOARD ---
-
 class ProfileAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
         try:
-            # --- STAFF DASHBOARD ---
+            # --- STAFF DASHBOARD (Type 2) ---
             if user.user_type == '2':
                 staff_profile = Staffs.objects.get(admin=user)
                 subjects_count = Subjects.objects.filter(staff_id=user).count()
@@ -133,7 +132,7 @@ class ProfileAPIView(APIView):
                     "user_type": "2"
                 })
 
-            # --- ADMIN DASHBOARD ---
+            # --- ADMIN DASHBOARD (Type 1) ---
             elif user.user_type == '1':
                 profile = AdminHOD.objects.get(admin=user)
                 return Response({
@@ -141,12 +140,21 @@ class ProfileAPIView(APIView):
                     "dashboard_stats": {
                         "total_students": Students.objects.count(),
                         "total_staffs": Staffs.objects.count(),
-                    }
+                    },
+                    "user_type": "1"
                 })
+            elif user.user_type == '3':
+                student_profile = Students.objects.get(admin=user)
+                return Response({
+                    "my_profile": StudentSerializer(student_profile).data,
+                    "user_type": "3"
+                })
+
+            return Response({"error": "User type not recognized"}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+        
 class StaffListAPIView(generics.ListAPIView): 
     permission_classes = [permissions.IsAuthenticated]
     
@@ -160,6 +168,13 @@ class StaffListAPIView(generics.ListAPIView):
             } for s in staff_members
         ]
         return Response(data)
+    
+    def post(self, request): 
+        serializer = StaffSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class StaffDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
