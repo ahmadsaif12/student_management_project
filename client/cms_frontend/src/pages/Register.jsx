@@ -61,7 +61,7 @@ const Register = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20 mb-4">
             <i className="fas fa-user-plus text-white text-2xl"></i>
           </div>
-          <h2 className="text-white text-3xl font-black tracking-tight uppercase">Join JECRC</h2>
+          <h2 className="text-white text-3xl font-black tracking-tight uppercase">Join CMS</h2>
           <p className="text-slate-400 text-xs mt-2 font-bold uppercase tracking-[0.3em]">Institutional Access</p>
         </div>
         
