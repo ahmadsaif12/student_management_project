@@ -6,6 +6,7 @@ from rest_framework import status, permissions, generics, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import update_last_login 
 
 from .models import *
 from .serializers import *
@@ -73,7 +74,6 @@ class RegistrationAPIView(APIView):
         except (IndexError, AttributeError):
             return None
 
-# --- LOGIN ---
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -89,6 +89,9 @@ class LoginAPIView(APIView):
 
         if user:
             if user.is_active:
+                # --- ADD THIS LINE HERE ---
+                update_last_login(None, user) 
+                
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "refresh": str(refresh),
@@ -100,7 +103,6 @@ class LoginAPIView(APIView):
             return Response({"error": "Account disabled"}, status=status.HTTP_403_FORBIDDEN)
             
         return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
 # --- PROFILE & DASHBOARD ---
 class ProfileAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
