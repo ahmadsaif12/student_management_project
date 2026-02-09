@@ -24,10 +24,18 @@ const Login = () => {
         password: formData.password
       });
 
+      // --- CRITICAL FIX: Extracting nested user data ---
+      // Your Django response sends the name inside the 'user' object
+      const userData = response.user || {};
+      const fullName = userData.first_name && userData.last_name 
+        ? `${userData.first_name} ${userData.last_name}` 
+        : 'Student User';
+
       // Unified storage keys
       localStorage.setItem('access_token', response.access || response.token); 
       localStorage.setItem('user_role', String(response.user_type)); 
-      localStorage.setItem('user_name', response.first_name || 'User');
+      localStorage.setItem('user_name', fullName);
+      localStorage.setItem('user_email', userData.email || '');
 
       const role = String(response.user_type);
       

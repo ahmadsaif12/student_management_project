@@ -38,15 +38,22 @@ const StudentHome = () => {
   };
 
   // Logic for Sidebar Branding and Profile Initials
-  const brandName = useMemo(() => userName.split(' ')[0].toUpperCase(), [userName]);
-  const initials = useMemo(() => userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2), [userName]);
+  const brandName = useMemo(() => {
+    const name = userName === 'Student User' ? 'STUDENT' : userName.split(' ')[0];
+    return name.toUpperCase();
+  }, [userName]);
+
+  const initials = useMemo(() => {
+    if (userName === 'Student User') return 'ST';
+    return userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }, [userName]);
 
   const overview = stats?.overview || {};
   const breakdown = stats?.breakdown || [];
 
   const pieData = [
-    { name: 'Present', value: overview.present || 0, color: '#6366f1' }, // Indigo
-    { name: 'Absent', value: overview.absent || 0, color: '#f1f5f9' },   // Slate 100
+    { name: 'Present', value: overview.present || 0, color: '#6366f1' }, 
+    { name: 'Absent', value: overview.absent || 0, color: '#f1f5f9' },   
   ];
 
   if (loading) return (
@@ -74,7 +81,7 @@ const StudentHome = () => {
         
         <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-1">
           <SectionTitle title="Academic Life" />
-          <SidebarLink active={location.pathname === '/student-home'} onClick={() => navigate('/student-home')} icon="fas fa-grid-2" label="Overview" />
+          <SidebarLink active={location.pathname === '/student-home'} onClick={() => navigate('/student-home')} icon="fas fa-th-large" label="Overview" />
           <SidebarLink active={location.pathname === '/student-view-attendance'} onClick={() => navigate('/student-view-attendance')} icon="fas fa-calendar-check" label="Attendance" />
           <SidebarLink active={location.pathname === '/student-view-results'} onClick={() => navigate('/student-view-results')} icon="fas fa-medal" label="Grades" />
           
@@ -94,46 +101,44 @@ const StudentHome = () => {
       <main className="lg:ml-72 flex-1 flex flex-col">
         
         {/* TOP NAVBAR */}
-        {/* TOP NAVBAR */}
-         {/* TOP NAVBAR */}
-<header className="h-24 bg-white/70 backdrop-blur-2xl flex items-center justify-between px-12 border-b border-slate-200 sticky top-0 z-20">
-  <div>
-    <h2 className="text-indigo-600 font-black text-[9px] uppercase tracking-[0.4em] mb-1">
-      Student Dashboard
-    </h2>
-    {/* Displays Full Name without "Welcome Back" */}
-    <p className="text-slate-900 font-black text-2xl tracking-tight italic">
-      {userName !== 'Student User' ? userName : 'Guest Student'}
-    </p>
-  </div>
+        <header className="h-24 bg-white/70 backdrop-blur-2xl flex items-center justify-between px-12 border-b border-slate-200 sticky top-0 z-20">
+          <div>
+            <h2 className="text-indigo-600 font-black text-[9px] uppercase tracking-[0.4em] mb-1">
+              Student Dashboard
+            </h2>
+            <p className="text-slate-900 font-black text-2xl tracking-tight italic">
+              {userName !== 'Student User' ? userName : 'Guest Student'}
+            </p>
+          </div>
 
-  <div className="relative">
-    <button 
-      onClick={() => setShowProfileMenu(!showProfileMenu)} 
-      className="flex items-center gap-4 bg-white hover:bg-slate-50 p-1.5 pr-6 rounded-2xl transition-all border border-slate-200 shadow-sm group"
-    >
-      <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
-          {initials}
-      </div>
-      <div className="text-left hidden sm:block">
-          <p className="text-xs font-black text-slate-800 leading-none">{userName}</p>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 italic">Verified Student</p>
-      </div>
-    </button>
-    
-    {showProfileMenu && (
-      <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-top-4">
-          <button onClick={() => navigate('/profile')} className="w-full text-left px-6 py-4 text-xs font-black text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl flex items-center gap-3 transition-colors">
-            <i className="fas fa-id-badge text-lg text-indigo-500"></i> Account Profile
-          </button>
-          <div className="h-px bg-slate-100 my-2 mx-4"></div>
-          <button onClick={handleLogout} className="w-full text-left px-6 py-4 text-xs font-black text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center gap-3 transition-colors">
-            <i className="fas fa-power-off text-lg"></i> Sign Out Portal
-          </button>
-      </div>
-    )}
-  </div>
-</header>
+          <div className="relative">
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)} 
+              className="flex items-center gap-4 bg-white hover:bg-slate-50 p-1.5 pr-6 rounded-2xl transition-all border border-slate-200 shadow-sm group"
+            >
+              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
+                  {initials}
+              </div>
+              <div className="text-left hidden sm:block">
+                  <p className="text-xs font-black text-slate-800 leading-none">{userName}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 italic">Verified Student</p>
+              </div>
+            </button>
+            
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-3 z-50 animate-in fade-in slide-in-from-top-4">
+                  <button onClick={() => navigate('/profile')} className="w-full text-left px-6 py-4 text-xs font-black text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl flex items-center gap-3 transition-colors">
+                    <i className="fas fa-id-badge text-lg text-indigo-500"></i> Account Profile
+                  </button>
+                  <div className="h-px bg-slate-100 my-2 mx-4"></div>
+                  <button onClick={handleLogout} className="w-full text-left px-6 py-4 text-xs font-black text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center gap-3 transition-colors">
+                    <i className="fas fa-power-off text-lg"></i> Sign Out Portal
+                  </button>
+              </div>
+            )}
+          </div>
+        </header>
+
         {/* CONTENT */}
         <div className="p-12 max-w-[1600px] mx-auto w-full space-y-10">
           
@@ -146,7 +151,6 @@ const StudentHome = () => {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-            {/* RATIO CHART */}
             <ChartCard title="Attendance Consistency" span="xl:col-span-1">
                 <div className="relative h-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -164,7 +168,6 @@ const StudentHome = () => {
                 </div>
             </ChartCard>
 
-            {/* BAR CHART */}
             <ChartCard title="Performance by Subject" span="xl:col-span-2">
                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={breakdown} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
