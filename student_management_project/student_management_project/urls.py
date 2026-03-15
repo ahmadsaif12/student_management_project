@@ -16,8 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+# this is extra
+from django.http import JsonResponse
 
+def api_root(request):
+    return JsonResponse({
+        "message": "Student Management API is live",
+        "endpoints": {
+            "accounts": "/api/accounts/",
+            "curriculum": "/api/curriculum/",
+            "admin": "/admin/"
+        }
+    })
 urlpatterns = [
+    path('', api_root), #extra for deployment
     path('admin/', admin.site.urls),
     path('api/accounts/', include('app.accounts.urls')),
     path('api/curriculum/', include('app.curriculum.urls')),
