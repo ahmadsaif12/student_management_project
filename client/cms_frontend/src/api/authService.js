@@ -1,9 +1,5 @@
 import axiosInstance from './axiosInstance';
 
-/**
- * --- AUTHENTICATION ---
- * Handles login, registration, profile, and logout.
- */
 
 export const loginUser = async (credentials) => {
   try {
@@ -52,10 +48,6 @@ export const logoutUser = async () => {
     window.location.href = '/login'; 
   }
 };
-
-/**
- * --- STUDENT MANAGEMENT (Admin Only) ---
- */
 
 export const getStudents = async () => {
   try {
