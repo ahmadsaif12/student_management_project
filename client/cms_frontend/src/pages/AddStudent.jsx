@@ -8,12 +8,12 @@ const AddStudent = () => {
   const [courses, setCourses] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     raw_email: '',
     password: '',
-    first_name: '',
-    last_name: '',
+    f_name: '',
+    l_name: '',
     gender: 'Male',
     address: '',
     course_id: '',
@@ -49,7 +49,7 @@ const AddStudent = () => {
       await addStudent(data);
       navigate('/manage-student');
     } catch (err) {
-      alert("Registration failed. Please check the console for details.");
+      alert("Registration failed. Check console for details.");
       console.error("Submission Error:", err);
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ const AddStudent = () => {
     <div className="min-h-screen bg-[#f8fafc] p-8 flex items-center justify-center font-sans">
       <div className="max-w-4xl w-full bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
         
-        {/* Header Header */}
+        {/* Header */}
         <div className="bg-[#0f172a] p-10 text-white flex justify-between items-center">
           <div>
             <h3 className="text-2xl font-black uppercase tracking-tight">Register Student</h3>
@@ -71,43 +71,43 @@ const AddStudent = () => {
           </div>
           <i className="fas fa-user-plus text-4xl opacity-20"></i>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            {/* Section: Account Credentials */}
+
+            {/* Account Section */}
             <div className="space-y-4">
               <h4 className="text-xs font-black text-indigo-600 uppercase tracking-tighter border-b pb-2 mb-4">Account Access</h4>
               <div>
                 <label className={labelStyle}>Email Address</label>
-                <input type="email" placeholder="saif.student@jecrc.ac.in" required className={inputStyle} 
+                <input type="email" placeholder="student@example.com" required className={inputStyle} 
                   onChange={e => setFormData({...formData, raw_email: e.target.value})} />
               </div>
               <div>
-                <label className={labelStyle}>Access Password</label>
+                <label className={labelStyle}>Password</label>
                 <input type="password" placeholder="••••••••" required className={inputStyle} 
                   onChange={e => setFormData({...formData, password: e.target.value})} />
               </div>
             </div>
 
-            {/* Section: Personal Info */}
+            {/* Personal Info Section */}
             <div className="space-y-4">
               <h4 className="text-xs font-black text-indigo-600 uppercase tracking-tighter border-b pb-2 mb-4">Personal Details</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelStyle}>First Name</label>
                   <input type="text" placeholder="John" required className={inputStyle} 
-                    onChange={e => setFormData({...formData, first_name: e.target.value})} />
+                    onChange={e => setFormData({...formData, f_name: e.target.value})} />
                 </div>
                 <div>
                   <label className={labelStyle}>Last Name</label>
                   <input type="text" placeholder="Doe" required className={inputStyle} 
-                    onChange={e => setFormData({...formData, last_name: e.target.value})} />
+                    onChange={e => setFormData({...formData, l_name: e.target.value})} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelStyle}>Gender Identity</label>
+                  <label className={labelStyle}>Gender</label>
                   <select className={inputStyle} value={formData.gender} 
                     onChange={e => setFormData({...formData, gender: e.target.value})}>
                     <option value="Male">Male</option>
@@ -116,7 +116,7 @@ const AddStudent = () => {
                   </select>
                 </div>
                 <div>
-                  <label className={labelStyle}>Course Stream</label>
+                  <label className={labelStyle}>Course</label>
                   <select required className={inputStyle} 
                     onChange={e => setFormData({...formData, course_id: e.target.value})}>
                     <option value="">Select Course</option>
@@ -126,32 +126,33 @@ const AddStudent = () => {
               </div>
             </div>
 
-            {/* Full Width Section */}
+            {/* Full Width Inputs */}
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label className={labelStyle}>Residential Address</label>
-                <input type="text" placeholder="Street name, City, State" required className={inputStyle} 
+                <input type="text" placeholder="Street, City, State" required className={inputStyle} 
                   onChange={e => setFormData({...formData, address: e.target.value})} />
               </div>
               <div>
                 <label className={labelStyle}>Academic Session</label>
                 <select required className={inputStyle} 
                   onChange={e => setFormData({...formData, session_year_id: e.target.value})}>
-                  <option value="">Select Session Range</option>
+                  <option value="">Select Session</option>
                   {sessions.map(s => <option key={s.id} value={s.id}>{s.session_start_year} - {s.session_end_year}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* File Upload Area */}
+            {/* File Upload */}
             <div className="md:col-span-2">
-               <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-[2rem] text-center hover:border-indigo-400 transition-all group">
-                  <i className="fas fa-cloud-upload-alt text-3xl text-slate-300 group-hover:text-indigo-500 mb-3 block"></i>
-                  <label className={labelStyle}>Upload Identification Photo</label>
-                  <input type="file" className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" 
-                   onChange={e => setFormData({...formData, profile_pic: e.target.files[0]})} />
-               </div>
+              <div className="bg-slate-50 border-2 border-dashed border-slate-200 p-8 rounded-[2rem] text-center hover:border-indigo-400 transition-all group">
+                <i className="fas fa-cloud-upload-alt text-3xl text-slate-300 group-hover:text-indigo-500 mb-3 block"></i>
+                <label className={labelStyle}>Upload Profile Photo</label>
+                <input type="file" className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" 
+                  onChange={e => setFormData({...formData, profile_pic: e.target.files[0]})} />
+              </div>
             </div>
+
           </div>
 
           <div className="mt-10 flex gap-4">
