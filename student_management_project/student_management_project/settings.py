@@ -70,8 +70,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'student_management_project.wsgi.application'
-ASGI_APPLICATION = 'student_management_project.asgi.application'
+#WSGI_APPLICATION = 'student_management_project.wsgi.application'
+#ASGI_APPLICATION = 'student_management_project.asgi.application'
 
 # --- DATABASE (PostgreSQL) ---
 DATABASES = {
